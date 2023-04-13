@@ -22,7 +22,7 @@ import chess.pgn as chess_pgn
 from chess.pgn import Game, Mainline
 from chess import Board, Move
 
-from ChessTokenizers import ChessTokenizers
+from ChessTokenizers import TokenizerManager
 
 
 
@@ -36,7 +36,7 @@ class DataPipeline:
         self.datasets_dir = os.path.join(self.root_dir, 'datasets')
 
         # --> Tokenizer
-        self.tokenizer_manager = ChessTokenizers()
+        self.tokenizer_manager = TokenizerManager()
         self.tokenizer = self.tokenizer_manager.moves_tokenizer
 
         # --> Create Mask Generator
@@ -52,6 +52,13 @@ class DataPipeline:
         self.human_positions = []
         with open(self.human_positions_file, 'rb') as f:
             self.human_positions = pickle.load(f)
+
+
+        # --> Parse dataset and save
+        self.pretraining_dataset = self.parse_dataset(self.pretraining_preprocess, batch_size=32)
+        self.pretraining_dataset_file = os.path.join(self.datasets_dir, 'pretraining-dataset-627')
+        self.pretraining_dataset.save(self.pretraining_dataset)
+
 
 
 
@@ -70,7 +77,7 @@ class DataPipeline:
         # return ({"moves": encoded_moves, "board": board}, next_move)
 
 
-    def parse_dataset(self, preprocess, batch_size=32):
+    def parse_dataset(self, preprocess_func, batch_size=32):
 
         # --> Iterate over all positions
         all_boards = []
@@ -83,7 +90,7 @@ class DataPipeline:
 
         dataset = tf.data.Dataset.from_tensor_slices((all_boards, all_moves, all_next_moves))
         dataset = dataset.batch(batch_size)
-        dataset = dataset.map(preprocess, num_parallel_calls=tf.data.AUTOTUNE)
+        dataset = dataset.map(preprocess_func, num_parallel_calls=tf.data.AUTOTUNE)
         return dataset.shuffle(2048).prefetch(16).cache()
 
 

@@ -21,18 +21,17 @@ import chess.pgn as chess_pgn
 from MoveTokenizer import MoveTokenizer
 
 
-class ChessTokenizers:
+class TokenizerManager:
 
     def __init__(self):
         self.root_dir = os.path.dirname(os.path.abspath(__file__))
         self.tokens_dir = os.path.join(self.root_dir, 'tokens')
 
         # --> Token File
-        self.token_file = 'tokens_4672.pkl'
-        self.tokens_file = os.path.join(self.tokens_dir, self.token_file)
+        self.tokens_file = os.path.join(self.tokens_dir, 'tokens_1946.pkl')
 
         # --> Tokenizers
-        self.moves_tokenizer = MoveTokenizer(self.token_file)
+        self.moves_tokenizer = MoveTokenizer(self.tokens_file)
 
     def parse_all_tokens(self, game_file, max_games=1000000, save=True):
         possible_moves = set()
@@ -57,18 +56,5 @@ class ChessTokenizers:
 
 
 
-
-
-
 if __name__ == '__main__':
-    tok = ChessTokenizers()
-
-    # --> Input Tokenizer
-    extra_tokens = ['[MASK]']
-    input_tokenizer = tok.get_move_tokenizer(100, extra_tokens=extra_tokens)
-
-    print(input_tokenizer.token_to_id("[MASK]"))
-    vocabulary = input_tokenizer.get_vocabulary(include_special_tokens=True)
-
-    # --> Output Tokenizer
-    output_tokenizer = tok.get_move_tokenizer(1)
+    tok = TokenizerManager()

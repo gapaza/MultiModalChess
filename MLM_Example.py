@@ -77,29 +77,6 @@ sst_val_ds = tf.data.experimental.CsvDataset(
 print(sst_train_ds.unbatch().batch(4).take(1).get_single_element())
 
 
-
-################
-### Baseline ###
-################
-
-# This layer will turn our input sentence into a list of 1s and 0s the same size
-# our vocabulary, indicating whether a word is present in absent.
-multi_hot_layer = keras.layers.TextVectorization(
-    max_tokens=4000, output_mode="multi_hot"
-)
-multi_hot_layer.adapt(sst_train_ds.map(lambda x, y: x))
-# We then learn a linear regression over that layer, and that's our entire
-# baseline model!
-regression_layer = keras.layers.Dense(1, activation="sigmoid")
-
-inputs = keras.Input(shape=(), dtype="string")
-outputs = regression_layer(multi_hot_layer(inputs))
-baseline_model = keras.Model(inputs, outputs)
-baseline_model.compile(loss="binary_crossentropy", metrics=["accuracy"])
-baseline_model.fit(sst_train_ds, validation_data=sst_val_ds, epochs=5)
-
-
-
 ###########
 ### MLM ###
 ###########
@@ -178,15 +155,6 @@ for i in range(NUM_LAYERS):
 
 encoder_model = keras.Model(inputs, outputs)
 encoder_model.summary()
-
-
-
-
-
-
-
-
-
 
 
 # Create the pretraining model by attaching a masked language model head.

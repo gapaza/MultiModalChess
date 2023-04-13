@@ -4,3 +4,4 @@ positions
 tokens
 .vscode
 .idea
+__pycache__
