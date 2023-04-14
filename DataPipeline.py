@@ -22,7 +22,7 @@ import chess.pgn as chess_pgn
 from chess.pgn import Game, Mainline
 from chess import Board, Move
 
-from ChessTokenizers import TokenizerManager
+from TokenizerManager import TokenizerManager
 
 
 
@@ -106,7 +106,8 @@ class DataPipeline:
 
 
 
-
+if __name__ == '__main__':
+    data_pipeline = DataPipeline()
 
 
 

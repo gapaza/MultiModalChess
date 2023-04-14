@@ -3,7 +3,7 @@ from keras import layers
 import pickle
 import os
 from keras_nlp.layers import TransformerEncoder, TokenAndPositionEmbedding, MaskedLMHead
-from ChessTokenizers import TokenizerManager
+from TokenizerManager import TokenizerManager
 
 class Hydra(Model):
 
@@ -95,6 +95,7 @@ class Hydra(Model):
 
 
 
-
+if __name__ == '__main__':
+    hydra = Hydra()
 
 
