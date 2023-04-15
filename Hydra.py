@@ -22,10 +22,12 @@ class Hydra(layers.Layer):
 
 
         # --> Board Embedding
-        self.board_conv2d_1 = layers.Conv2D(filters=32, kernel_size=(3, 3), activation="relu")
-        self.board_conv2d_2 = layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu", padding='same')
+        self.board_conv2d_1 = layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu")
+        self.board_conv2d_1_dropout = layers.Dropout(0.5)
+        self.board_conv2d_2 = layers.Conv2D(filters=128, kernel_size=(3, 3), activation="relu", padding='same')
+        self.board_conv2d_2_dropout = layers.Dropout(0.5)
         self.board_flatten = layers.Flatten()
-        self.board_dense = layers.Dense(256, activation="relu")
+        self.board_dense = layers.Dense(embed_dim, activation="relu")
         self.board_reshape = layers.Reshape((1, -1), name='board_embedding')
 
         # --> Move Embedding
@@ -58,8 +60,14 @@ class Hydra(layers.Layer):
         # sequential layer
         self.encoder_stack = keras.Sequential([
             TransformerEncoder(2048, 12),
+            layers.Dropout(0.5),
             TransformerEncoder(2048, 12),
-            TransformerEncoder(2048, 12)
+            layers.Dropout(0.5),
+            TransformerEncoder(2048, 12),
+            layers.Dropout(0.5),
+            TransformerEncoder(2048, 12),
+            # TransformerEncoder(2048, 12),
+            # TransformerEncoder(2048, 12)
         ])
 
         # ------------------
@@ -86,7 +94,9 @@ class Hydra(layers.Layer):
 
         # --> Board Embedding
         board_embedding = self.board_conv2d_1(board_inputs)
+        board_embedding = self.board_conv2d_1_dropout(board_embedding)
         board_embedding = self.board_conv2d_2(board_embedding)
+        board_embedding = self.board_conv2d_2_dropout(board_embedding)
         board_embedding = self.board_flatten(board_embedding)
         board_embedding = self.board_dense(board_embedding)
         board_embedding = self.board_reshape(board_embedding)

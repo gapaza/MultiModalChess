@@ -16,6 +16,7 @@ from tqdm import tqdm
 from Hydra import Hydra
 from HydraMLM import HydraMLM
 from hydra.HydraModel import HydraModel
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 
 class MoveVectorizeLayer:
@@ -42,7 +43,7 @@ class MoveVectorizeLayer:
 
         # --> 2. Get Positions Data
         # self.human_positions_file = os.path.join(self.positions_dir, 'human-training-positions-627.pkl')
-        self.human_positions_file = os.path.join(self.positions_dir, 'human-training-positions-72753.pkl')
+        self.human_positions_file = os.path.join(self.positions_dir, 'human-training-positions-743847.pkl')
         self.human_positions = []
         with open(self.human_positions_file, 'rb') as f:
             self.human_positions = pickle.load(f)
@@ -89,6 +90,7 @@ class MoveVectorizeLayer:
             (validation_x, validation_y, validation_sample_weights, self.validation_boards)
         )
         self.mlm_ds_validation = self.mlm_ds_validation.shuffle(1000).batch(self.batch_size)
+        self.mlm_ds_validation.save("");
         # validation_data = tf.data.Dataset.from_tensor_slices(
         #     ((self.validation_boards, validation_x), validation_y, validation_sample_weights)
         # )
@@ -143,10 +145,10 @@ class MoveVectorizeLayer:
 
         # --> Fit Model
         # self.model.fit(self.mlm_ds, epochs=5)
-        self.model.fit(self.mlm_ds_train, epochs=5, validation_data=self.mlm_ds_validation)
-
         model_file = os.path.join(self.models_dir, 'hydrachess')
-        self.model.save(model_file)
+        checkpoint = ModelCheckpoint(model_file, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+        self.model.fit(self.mlm_ds_train, epochs=5, validation_data=self.mlm_ds_validation, callbacks=[checkpoint])
+        # self.model.save(model_file)
 
 
     def build_model(self):
