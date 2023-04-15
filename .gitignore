@@ -2,6 +2,9 @@ datasets
 games
 positions
 tokens
+models
+aclImdb
 .vscode
+.DS_Store
 .idea
 __pycache__
