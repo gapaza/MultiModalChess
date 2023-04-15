@@ -31,10 +31,10 @@ class DataPipeline:
 
     def __init__(self):
         self.root_dir = os.path.dirname(os.path.abspath(__file__))
-        self.games_dir = os.path.join(self.root_dir, 'games')
-        self.tokens_dir = os.path.join(self.root_dir, 'tokens')
-        self.positions_dir = os.path.join(self.root_dir, 'positions')
-        self.datasets_dir = os.path.join(self.root_dir, 'datasets')
+        self.games_dir = os.path.join(self.root_dir, '../games')
+        self.tokens_dir = os.path.join(self.root_dir, '../tokens')
+        self.positions_dir = os.path.join(self.root_dir, '../positions')
+        self.datasets_dir = os.path.join(self.root_dir, '../datasets')
 
         # --> Tokenizer
         self.tokenizer_manager = TokenizerManager()

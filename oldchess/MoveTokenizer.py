@@ -68,7 +68,7 @@ class MoveTokenizer(Tokenizer):
 
 
 if __name__ == '__main__':
-    mt = MoveTokenizer('tokens/tokens_1946.pkl', mask=True)
+    mt = MoveTokenizer('../tokens/tokens_1946.pkl', mask=True)
     print(mt.vocab)
     print(mt.token_to_id('[MASK]'))
     print(mt.token_to_id('a1e1'))

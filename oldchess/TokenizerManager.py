@@ -1,31 +1,24 @@
 # --> Python Imports
 import os
-import numpy as np
 import pickle
 import itertools
-from copy import deepcopy
 
 # --> Tensorflow Imports
 from tqdm import tqdm
-from keras import layers
-import tensorflow as tf
-from keras_nlp.tokenizers import Tokenizer
 
 # --> Threading Imports
-from concurrent.futures import ThreadPoolExecutor
 
 # --> Chess Imports
-import chess
 import chess.pgn as chess_pgn
 
-from MoveTokenizer import MoveTokenizer
+from oldchess.MoveTokenizer import MoveTokenizer
 
 
 class TokenizerManager:
 
     def __init__(self):
         self.root_dir = os.path.dirname(os.path.abspath(__file__))
-        self.tokens_dir = os.path.join(self.root_dir, 'tokens')
+        self.tokens_dir = os.path.join(self.root_dir, '../tokens')
 
         # --> Token File
         self.tokens_file = os.path.join(self.tokens_dir, 'tokens_1946.pkl')

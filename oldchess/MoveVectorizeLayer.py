@@ -2,37 +2,32 @@ import tensorflow as tf
 import keras
 from keras import layers
 from keras.layers import TextVectorization
-from dataclasses import dataclass
 import pandas as pd
 import numpy as np
-import glob
 import os
 import pickle
 import re
-from pprint import pprint
 from keras.utils import plot_model
-from tqdm import tqdm
-
-from Hydra import Hydra
-from HydraMLM import HydraMLM
-from hydra.HydraModel import HydraModel
-from keras.callbacks import ModelCheckpoint, EarlyStopping
+from hydra import config
+from oldchess.Hydra import Hydra
+from oldchess.HydraMLM import HydraMLM
+from keras.callbacks import ModelCheckpoint
 
 
 class MoveVectorizeLayer:
 
 
     def __init__(self):
-        self.batch_size = 32
-        self.max_len = 128
+        self.batch_size = config.batch_size
+        self.max_len = config.seq_length
 
 
         self.root_dir = os.path.dirname(os.path.abspath(__file__))
-        self.games_dir = os.path.join(self.root_dir, 'games')
-        self.tokens_dir = os.path.join(self.root_dir, 'tokens')
-        self.positions_dir = os.path.join(self.root_dir, 'positions')
-        self.datasets_dir = os.path.join(self.root_dir, 'datasets')
-        self.models_dir = os.path.join(self.root_dir, 'models')
+        self.games_dir = os.path.join(self.root_dir, '../games')
+        self.tokens_dir = os.path.join(self.root_dir, '../tokens')
+        self.positions_dir = os.path.join(self.root_dir, '../positions')
+        self.datasets_dir = os.path.join(self.root_dir, '../datasets')
+        self.models_dir = os.path.join(self.root_dir, '../models')
 
         # --> 1. Get Vocabulary
         vocab_file = os.path.join(self.tokens_dir, 'tokens_1946.pkl')
@@ -68,8 +63,6 @@ class MoveVectorizeLayer:
         self.mask_token_id = self.vectorize_layer(["[mask]"]).numpy()[0][0]
 
         # --> 5. Prepare MLM Dataset
-
-
         self.all_moves = self.encode(self.all_data.moves.values.tolist())
         self.all_boards = self.all_data.board.values.tolist()
         split_idx = int(len(self.all_moves) * 0.8)
@@ -90,7 +83,7 @@ class MoveVectorizeLayer:
             (validation_x, validation_y, validation_sample_weights, self.validation_boards)
         )
         self.mlm_ds_validation = self.mlm_ds_validation.shuffle(1000).batch(self.batch_size)
-        self.mlm_ds_validation.save("");
+        self.mlm_ds_validation.save("")
         # validation_data = tf.data.Dataset.from_tensor_slices(
         #     ((self.validation_boards, validation_x), validation_y, validation_sample_weights)
         # )

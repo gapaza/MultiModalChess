@@ -14,11 +14,13 @@ from concurrent.futures import ThreadPoolExecutor
 import chess
 import chess.pgn as chess_pgn
 
+from hydra import config
+
 
 class PositionParser:
 
     def __init__(self, max_games=10000):
-        self.root_dir = os.path.dirname(os.path.abspath(__file__))
+        self.root_dir = config.root_dir
         self.games_dir = os.path.join(self.root_dir, 'games')
         self.tokens_dir = os.path.join(self.root_dir, 'tokens')
         self.positions_dir = os.path.join(self.root_dir, 'positions')

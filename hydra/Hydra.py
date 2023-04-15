@@ -11,25 +11,18 @@ from hydra.layers.Encoder import Encoder
 
 # --> Output Heads
 from hydra.heads.MovePrediction import MovePrediction
-
 from hydra.heads.MoveMaskPrediction import MoveMaskPrediction
 
-
-
-# --> MLM Loss
-loss_fn = keras.losses.SparseCategoricalCrossentropy(
-    reduction=tf.keras.losses.Reduction.NONE
-)
-loss_tracker = keras.metrics.Mean(name="loss")
+# --> Config
+from hydra import config
 
 
 
 
-
-class HydraModel(tf.keras.Model):
+class Hydra(layers.Layer):
 
     def __init__(self, *args, **kwargs):
-        super(HydraModel, self).__init__(*args, **kwargs)
+        super(Hydra, self).__init__(*args, **kwargs)
         self.mode = 'pretrain'
 
         # --> Move Embedding
@@ -63,45 +56,14 @@ class HydraModel(tf.keras.Model):
         encoder_outputs = self.encoder(encoder_inputs)
 
         # --> Output Heads
+        encoder_board_output = encoder_outputs[:, 0, :]
+        encoder_move_output = encoder_outputs[:, 1:, :]
         output = []
         if self.mode == 'pretrain':
-            output = self.move_mask_prediction_head(encoder_outputs)
+            output = self.move_mask_prediction_head(encoder_move_output)
         elif self.mode == 'predict':
             output = self.move_prediction_head(encoder_outputs)
-
         return output
-
-
-    def train_step(self, inputs):
-        if self.mode == 'pretrain':
-            return self.pretrain_step(inputs)
-
-
-    def pretrain_step(self, inputs):
-        features, labels, sample_weight, board = inputs
-
-        with tf.GradientTape() as tape:
-            predictions = self([board, features])
-            loss = loss_fn(labels, predictions, sample_weight=sample_weight)
-
-        # Compute gradients
-        trainable_vars = self.trainable_variables
-        gradients = tape.gradient(loss, trainable_vars)
-
-        # Update weights
-        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
-
-        # Compute our own metrics
-        loss_tracker.update_state(loss, sample_weight=sample_weight)
-
-        # Return a dict mapping metric names to current value
-        return {"loss": loss_tracker.result()}
-
-
-    @property
-    def metrics(self):
-        return [loss_tracker]
-
 
 
 
