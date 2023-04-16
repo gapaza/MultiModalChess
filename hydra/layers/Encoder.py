@@ -9,20 +9,18 @@ class Encoder(layers.Layer):
         super(Encoder, self).__init__()
 
         # --> Encoders
-        self.encoder_1 = TransformerEncoder(config.encoder_dense_dim, config.encoder_heads)
-        self.encoder_1_dropout = layers.Dropout(0.5)
-        self.encoder_2 = TransformerEncoder(config.encoder_dense_dim, config.encoder_heads)
-        self.encoder_2_dropout = layers.Dropout(0.5)
-        self.encoder_3 = TransformerEncoder(config.encoder_dense_dim, config.encoder_heads)
-        self.encoder_3_dropout = layers.Dropout(0.5)
+        self.encoder_stack = keras.Sequential([
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+        ])
+
 
 
 
     def __call__(self, inputs):
-        encoder_output = self.encoder_1(inputs)
-        encoder_output = self.encoder_1_dropout(encoder_output)
-        encoder_output = self.encoder_2(encoder_output)
-        encoder_output = self.encoder_2_dropout(encoder_output)
-        encoder_output = self.encoder_3(encoder_output)
-        encoder_output = self.encoder_3_dropout(encoder_output)
+        encoder_output = self.encoder_stack(inputs)
         return encoder_output

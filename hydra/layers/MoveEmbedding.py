@@ -6,20 +6,20 @@ from hydra import config
 
 class MoveEmbedding(layers.Layer):
 
-    def __init__(self, embed_dim=256):
+    def __init__(self):
         super(MoveEmbedding, self).__init__()
 
 
         # --> Token Embeddings
         self.token_embeddings = layers.Embedding(
-            config.vocab_size, embed_dim, name="word_embedding"
+            config.vocab_size, config.embed_dim, name="word_embedding"
         )
 
         # --> Position Embeddings
         self.token_position_embeddings = layers.Embedding(
             input_dim=config.seq_length,
-            output_dim=embed_dim,
-            weights=[self.get_pos_encoding_matrix(config.seq_length, embed_dim)],
+            output_dim=config.embed_dim,
+            weights=[self.get_pos_encoding_matrix(config.seq_length, config.embed_dim)],
             name="position_embedding",
         )
 

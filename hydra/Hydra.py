@@ -15,8 +15,7 @@ from hydra.heads.MoveMaskPrediction import MoveMaskPrediction
 
 # --> Config
 from hydra import config
-
-
+from keras_nlp.layers import MaskedLMMaskGenerator
 
 
 class Hydra(layers.Layer):
@@ -56,7 +55,7 @@ class Hydra(layers.Layer):
         encoder_outputs = self.encoder(encoder_inputs)
 
         # --> Output Heads
-        encoder_board_output = encoder_outputs[:, 0, :]
+        encoder_board_output = encoder_outputs[:, :1, :]
         encoder_move_output = encoder_outputs[:, 1:, :]
         output = []
         if self.mode == 'pretrain':

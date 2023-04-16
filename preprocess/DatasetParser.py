@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import os
 import pickle
+import random
 import re
 
 from hydra import config
@@ -47,16 +48,18 @@ class DatasetParser:
         # --> 5. Preprocess Train and Validation Datasets
         print('--> 5. Preprocess Train and Validation Datasets')
         train_x, train_y, train_sample_weights = self.get_masked_input_and_labels(self.train_moves)
+        buffer_size = len(train_x)
         self.train_dataset = tf.data.Dataset.from_tensor_slices(
             (train_x, train_y, train_sample_weights, self.train_boards)
         )
-        self.train_dataset = self.train_dataset.shuffle(1000).batch(config.batch_size)
+        self.train_dataset = self.train_dataset.shuffle(buffer_size).batch(config.batch_size)
 
         validation_x, validation_y, validation_sample_weights = self.get_masked_input_and_labels(self.validation_moves)
+        buffer_size = len(validation_x)
         self.val_dataset = tf.data.Dataset.from_tensor_slices(
             (validation_x, validation_y, validation_sample_weights, self.validation_boards)
         )
-        self.val_dataset = self.val_dataset.shuffle(1000).batch(config.batch_size)
+        self.val_dataset = self.val_dataset.shuffle(buffer_size).batch(config.batch_size)
 
         # --> 6. Save Datasets
         print('--> 6. Save Datasets')

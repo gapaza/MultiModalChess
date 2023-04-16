@@ -26,12 +26,12 @@ class PositionParser:
         self.positions_dir = os.path.join(self.root_dir, 'positions')
 
         # --> Parse Human Games, Positions
-        self.human_games_file = os.path.join(self.games_dir, 'human-training-games.pgn')
+        self.human_games_file = os.path.join(self.games_dir, 'computer-training-games.pgn')
         self.human_games = self.parse_games(self.human_games_file, max_games=max_games)
         self.human_positions = self.parse_positions(self.human_games)
 
         # --> Pickle Human Positions
-        self.human_positions_file = os.path.join(self.positions_dir, 'human-training-positions-' + str(len(self.human_positions)) + '.pkl')
+        self.human_positions_file = os.path.join(self.positions_dir, 'computer-training-positions-' + str(len(self.human_positions)) + '.pkl')
         with open(self.human_positions_file, 'wb') as f:
             pickle.dump(self.human_positions, f)
 
@@ -88,9 +88,9 @@ class PositionParser:
 
         # --> Other Moves
         for idx, move in enumerate(all_moves):
-            board.push(move)
             if len(all_moves) <= (idx + 1):
                 break
+            board.push(move)
             next_move = all_moves[idx + 1]
             aggregated_moves.append(move.uci())
             move_data = {
@@ -130,4 +130,4 @@ class PositionParser:
 
 
 if __name__ == '__main__':
-    pp = PositionParser(max_games=10)
+    pp = PositionParser(max_games=10000)

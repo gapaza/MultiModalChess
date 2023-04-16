@@ -7,7 +7,7 @@ from hydra import config
 from keras.utils import plot_model
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
-
+import matplotlib.pyplot as plt
 
 
 
@@ -24,14 +24,24 @@ def train():
     # --> Train Model
     model_file = os.path.join(config.datasets_dir, config.model_name)
     checkpoint = ModelCheckpoint(model_file, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
-    model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset, callbacks=[checkpoint])
+    history = model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset, callbacks=[checkpoint])
+
+    # --> Plot Training History
+    plt.figure(figsize=(10, 6))
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
+
 
 
 def build_model():
 
     # --> Inputs
     board_inputs = layers.Input(shape=(8, 8, 12,), name="board")
-    move_inputs = layers.Input(shape=(128,), name="moves")
+    move_inputs = layers.Input(shape=(config.seq_length,), name="moves")
 
     # --> Hydra Encoder
     hydra = Hydra()
