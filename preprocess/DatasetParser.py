@@ -5,6 +5,7 @@ import numpy as np
 import os
 import pickle
 import re
+import shutil
 
 from hydra import config
 
@@ -89,8 +90,14 @@ class DatasetParser:
 
         # --> 6. Save Datasets
         print('--> 6. Save Datasets')
-        self.train_dataset.save(os.path.join(config.datasets_dir, 'train-dataset-' + str(self.num_positions)))
-        self.val_dataset.save(os.path.join(config.datasets_dir, 'val-dataset-' + str(self.num_positions)))
+        train_path = os.path.join(config.datasets_dir, 'train-dataset-' + str(self.num_positions))
+        val_path = os.path.join(config.datasets_dir, 'val-dataset-' + str(self.num_positions))
+        if os.path.exists(train_path):
+            shutil.rmtree(train_path)
+        if os.path.exists(val_path):
+            shutil.rmtree(val_path)
+        self.train_dataset.save(train_path)
+        self.val_dataset.save(val_path)
 
 
     def parse_positions_file(self, positions_file):

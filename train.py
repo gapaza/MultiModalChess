@@ -8,6 +8,7 @@ from keras.utils import plot_model
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 import matplotlib.pyplot as plt
+import time
 
 
 class PlotCallback(tf.keras.callbacks.Callback):
@@ -19,6 +20,7 @@ class PlotCallback(tf.keras.callbacks.Callback):
         self.train_accuracies = []
         self.val_accuracies = []
         self.plot_name = name
+        self.time = time.time()
         self.num_positions = config.train_dataset.split('-')[-1]
 
     def on_epoch_end(self, epoch, logs=None):
@@ -39,9 +41,9 @@ class PlotCallback(tf.keras.callbacks.Callback):
         plt.plot(self.val_accuracies, label='Validation Accuracy')
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
-        plt.title(f'Model Training and Validation Accuracy - Epoch {epoch + 1}')
+        plt.title(f'Model: {self.plot_name} - Dataset Positions {self.num_positions} - Epoch {epoch + 1}')
         plt.legend()
-        plt.savefig(os.path.join(self.plot_dir, f'{self.plot_name}-{self.num_positions}.png'))
+        plt.savefig(os.path.join(self.plot_dir, f'{self.plot_name}-{self.num_positions}-{self.time}.png'))
         plt.show()
 
 

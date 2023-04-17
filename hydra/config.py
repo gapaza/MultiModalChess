@@ -17,9 +17,9 @@ games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
 # games_file = os.path.join(root_dir, 'games', 'computer-training-games.pgn')
 
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-627.pkl')
-positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-6224.pkl')
+# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-6224.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-72753.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-743847.pkl')
+positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-743847.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'computer-training-positions-1373003.pkl')
 
 
@@ -28,8 +28,8 @@ positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-6
 #############################
 ##### Training Settings #####
 #############################
-train_dataset = 'train-dataset-627'
-val_dataset = 'val-dataset-627'
+train_dataset = 'train-dataset-743847'
+val_dataset = 'val-dataset-743847'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 64  # 32 64 128
