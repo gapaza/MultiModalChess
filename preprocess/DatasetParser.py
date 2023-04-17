@@ -4,11 +4,9 @@ import pandas as pd
 import numpy as np
 import os
 import pickle
-import random
 import re
 
 from hydra import config
-
 
 
 class DatasetParser:
@@ -20,6 +18,7 @@ class DatasetParser:
         # --> 1. Get Position Data
         print('--> 1. Get Position Data')
         self.all_positions = self.parse_positions_file(config.human_positions_file)
+        self.all_positions = self.all_positions.sample(frac=1).reset_index(drop=True)
         self.num_positions = config.human_positions_file.split('-')[-1].split('.')[0]
 
         # --> 2. Create Vectorization Layer
@@ -47,19 +46,46 @@ class DatasetParser:
 
         # --> 5. Preprocess Train and Validation Datasets
         print('--> 5. Preprocess Train and Validation Datasets')
-        train_x, train_y, train_sample_weights = self.get_masked_input_and_labels(self.train_moves)
-        buffer_size = len(train_x)
-        self.train_dataset = tf.data.Dataset.from_tensor_slices(
-            (train_x, train_y, train_sample_weights, self.train_boards)
-        )
-        self.train_dataset = self.train_dataset.shuffle(buffer_size).batch(config.batch_size)
 
-        validation_x, validation_y, validation_sample_weights = self.get_masked_input_and_labels(self.validation_moves)
-        buffer_size = len(validation_x)
-        self.val_dataset = tf.data.Dataset.from_tensor_slices(
-            (validation_x, validation_y, validation_sample_weights, self.validation_boards)
+
+        # train_x, train_y, train_sample_weights, train_boards = self.get_masked_input_and_labels(self.train_moves, self.train_boards)
+        # buffer_size = len(train_x)
+        # self.train_dataset = tf.data.Dataset.from_tensor_slices(
+        #     (train_x, train_y, train_sample_weights, train_boards)
+        # )
+        # self.train_dataset = self.train_dataset.shuffle(buffer_size).batch(config.batch_size)
+
+
+        buffer_size = len(self.train_moves)
+        print('buffer_size', buffer_size)
+        self.train_dataset = tf.data.Dataset.from_tensor_slices(
+            (self.train_moves, self.train_boards)
         )
-        self.val_dataset = self.val_dataset.shuffle(buffer_size).batch(config.batch_size)
+        self.train_dataset = self.train_dataset.map(
+            self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
+        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE).batch(config.batch_size)
+
+
+
+
+        buffer_size = len(self.validation_moves)
+        print('buffer_size', buffer_size)
+        self.val_dataset = tf.data.Dataset.from_tensor_slices(
+            (self.validation_moves, self.validation_boards)
+        )
+        self.val_dataset = self.val_dataset.map(
+            self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
+        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE).batch(config.batch_size)
+
+
+
+
+        # validation_x, validation_y, validation_sample_weights, validation_boards = self.get_masked_input_and_labels(self.validation_moves, self.validation_boards)
+        # buffer_size = len(validation_x)
+        # self.val_dataset = tf.data.Dataset.from_tensor_slices(
+        #     (validation_x, validation_y, validation_sample_weights, validation_boards)
+        # )
+        # self.val_dataset = self.val_dataset.shuffle(buffer_size).batch(config.batch_size)
 
         # --> 6. Save Datasets
         print('--> 6. Save Datasets')
@@ -109,7 +135,7 @@ class DatasetParser:
         encoded_texts = self.vectorize_layer(texts)
         return encoded_texts.numpy()
 
-    def get_masked_input_and_labels(self, inputs):
+    def get_masked_input_and_labels(self, inputs, boards):
 
         # encoded_texts: shape(N, 128) where 128 is the max sequence length
         # - filled with tokenized values
@@ -156,7 +182,36 @@ class DatasetParser:
         # - is essentially the input to this function
         y_labels = np.copy(encoded_texts)
 
-        return encoded_texts_masked, y_labels, sample_weights
+        return encoded_texts_masked, y_labels, sample_weights, boards
+
+    def get_masked_input_and_labels_tf(self, inputs, boards):
+        encoded_texts = inputs
+
+        inp_mask = tf.random.uniform(encoded_texts.shape) < 0.15
+        inp_mask = tf.logical_and(inp_mask, encoded_texts > 2)
+
+        labels = -1 * tf.ones(encoded_texts.shape, dtype=tf.int64)
+        labels = tf.where(inp_mask, encoded_texts, labels)
+
+        encoded_texts_masked = tf.identity(encoded_texts)
+
+        predict_prob = 1.0
+        inp_mask_2mask = tf.logical_and(inp_mask, tf.random.uniform(encoded_texts.shape) < predict_prob)
+        encoded_texts_masked = tf.where(inp_mask_2mask, self.mask_token_id, encoded_texts_masked)
+
+        random_prob = 0.0
+        inp_mask_2random = tf.logical_and(inp_mask_2mask, tf.random.uniform(encoded_texts.shape) < random_prob)
+        random_tokens = tf.random.uniform(inp_mask_2random.shape, minval=3, maxval=self.mask_token_id, dtype=tf.int64)
+        encoded_texts_masked = tf.where(inp_mask_2random, random_tokens, encoded_texts_masked)
+
+        sample_weights = tf.ones(labels.shape, dtype=tf.int32)
+        sample_weights = tf.where(labels == -1, 0, sample_weights)
+
+        y_labels = tf.identity(encoded_texts)
+
+        return encoded_texts_masked, y_labels, sample_weights, boards
+
+
 
 
 if __name__ == '__main__':

@@ -18,8 +18,6 @@ class ChessModelWrapper:
         self.move_history = []
 
 
-
-
     def model_move(self):
         legal_moves = list(self.board.legal_moves)
         return random.choice(legal_moves)

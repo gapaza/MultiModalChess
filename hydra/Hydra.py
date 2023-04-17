@@ -1,7 +1,4 @@
-import tensorflow as tf
 from keras import layers
-import keras
-
 
 # --> Custom Layers
 from hydra.layers.MoveEmbedding import MoveEmbedding
@@ -14,8 +11,6 @@ from hydra.heads.MovePrediction import MovePrediction
 from hydra.heads.MoveMaskPrediction import MoveMaskPrediction
 
 # --> Config
-from hydra import config
-from keras_nlp.layers import MaskedLMMaskGenerator
 
 
 class Hydra(layers.Layer):

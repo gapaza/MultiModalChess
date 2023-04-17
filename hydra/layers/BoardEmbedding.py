@@ -2,6 +2,7 @@ from keras import layers
 import keras
 from hydra import config
 
+
 class BoardEmbedding(layers.Layer):
 
     def __init__(self):

@@ -1,6 +1,7 @@
 from keras import layers
 from hydra import config
 
+
 class MovePrediction(layers.Layer):
 
     def __init__(self):
