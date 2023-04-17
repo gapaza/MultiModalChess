@@ -30,7 +30,7 @@ human_positions_file = os.path.join(root_dir, 'positions', 'human-training-posit
 train_dataset = 'train-dataset-72753'
 val_dataset = 'val-dataset-72753'
 model_name = 'hydrachess'
-epochs = 10
+epochs = 50
 batch_size = 64  # 32 64 128
 seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file
