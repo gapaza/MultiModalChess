@@ -10,6 +10,40 @@ from keras.callbacks import ModelCheckpoint
 import matplotlib.pyplot as plt
 
 
+class PlotCallback(tf.keras.callbacks.Callback):
+    def __init__(self, name, plot_dir='plots'):
+        super(PlotCallback, self).__init__()
+        self.plot_dir = plot_dir
+        if not os.path.exists(self.plot_dir):
+            os.makedirs(self.plot_dir)
+        self.train_accuracies = []
+        self.val_accuracies = []
+        self.plot_name = name
+        self.num_positions = config.train_dataset.split('-')[-1]
+
+    def on_epoch_end(self, epoch, logs=None):
+        if logs is None:
+            logs = {}
+
+        train_acc = logs.get('accuracy')
+        val_acc = logs.get('val_accuracy')
+
+        if train_acc is not None:
+            self.train_accuracies.append(train_acc)
+        if val_acc is not None:
+            self.val_accuracies.append(val_acc)
+
+        plt.close()
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.train_accuracies, label='Training Accuracy')
+        plt.plot(self.val_accuracies, label='Validation Accuracy')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.title(f'Model Training and Validation Accuracy - Epoch {epoch + 1}')
+        plt.legend()
+        plt.savefig(os.path.join(self.plot_dir, f'{self.plot_name}-{self.num_positions}.png'))
+        plt.show()
+
 
 
 def train():
@@ -24,14 +58,8 @@ def train():
     # --> Train Model
     model_file = os.path.join(config.datasets_dir, config.model_name)
     checkpoint = ModelCheckpoint(model_file, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
-
-    try:
-        history = model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset,
-                            callbacks=[checkpoint])
-    except KeyboardInterrupt:
-        history = model.history
-        print("Training interrupted. Proceeding to plot training history...")
-    # history = model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset, callbacks=[checkpoint])
+    plot_checkpoint = PlotCallback("hydra-mlm")
+    history = model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset, callbacks=[checkpoint, plot_checkpoint])
     print(history)
     # --> Plot Training History
     plt.figure(figsize=(10, 6))

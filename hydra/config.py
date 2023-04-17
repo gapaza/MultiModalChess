@@ -13,13 +13,14 @@ models_dir = os.path.join(root_dir, 'models')
 ####################
 ##### Datasets #####
 ####################
-# human_games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
-human_games_file = os.path.join(root_dir, 'games', 'computer-training-games.pgn')
+games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
+# games_file = os.path.join(root_dir, 'games', 'computer-training-games.pgn')
 
-# human_positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-6224.pkl')
-human_positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-72753.pkl')
-# human_positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-743847.pkl')
-# human_positions_file = os.path.join(root_dir, 'positions', 'computer-training-positions-1373003.pkl')
+# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-627.pkl')
+positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-6224.pkl')
+# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-72753.pkl')
+# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-743847.pkl')
+# positions_file = os.path.join(root_dir, 'positions', 'computer-training-positions-1373003.pkl')
 
 
 
@@ -27,8 +28,8 @@ human_positions_file = os.path.join(root_dir, 'positions', 'human-training-posit
 #############################
 ##### Training Settings #####
 #############################
-train_dataset = 'train-dataset-6224'
-val_dataset = 'val-dataset-6224'
+train_dataset = 'train-dataset-627'
+val_dataset = 'val-dataset-627'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 64  # 32 64 128
@@ -78,5 +79,10 @@ vocab = vocab[2: vocab_size - len(special_tokens)] + ["[mask]"]
 tokenizer.set_vocabulary(vocab)
 vocab_size = len(vocab)
 mask_token_id = tokenizer(["[mask]"]).numpy()[0][0]
+
+
+id2token = dict(enumerate(tokenizer.get_vocabulary()))
+token2id = {y: x for x, y in id2token.items()}
+
 
 print('--> FINISHED: config.py')

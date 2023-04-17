@@ -17,9 +17,9 @@ class DatasetParser:
 
         # --> 1. Get Position Data
         print('--> 1. Get Position Data')
-        self.all_positions = self.parse_positions_file(config.human_positions_file)
+        self.all_positions = self.parse_positions_file(config.positions_file)
         self.all_positions = self.all_positions.sample(frac=1).reset_index(drop=True)
-        self.num_positions = config.human_positions_file.split('-')[-1].split('.')[0]
+        self.num_positions = config.positions_file.split('-')[-1].split('.')[0]
 
         # --> 2. Create Vectorization Layer
         print('--> 2. Create Vectorization Layer')
@@ -94,7 +94,7 @@ class DatasetParser:
 
 
     def parse_positions_file(self, positions_file):
-        print('Positions file: ', config.human_positions_file)
+        print('Positions file: ', config.positions_file)
         positions = []
         with open(positions_file, 'rb') as f:
             positions = pickle.load(f)
