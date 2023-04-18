@@ -7,6 +7,18 @@ import tensorflow as tf
 
 class BoardEmbedding(layers.Layer):
 
+    # self.board_embedding_old = keras.Sequential([
+    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu", padding='same'),
+    #     layers.Dropout(0.5),
+    #     layers.Conv2D(filters=128, kernel_size=(3, 3), activation="relu", padding='same'),
+    #     layers.Dropout(0.5),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", padding='same'),
+    #     layers.Dropout(0.5),
+    #     layers.Flatten(),
+    #     layers.Dense(config.embed_dim, activation="relu"),
+    #     layers.Reshape((1, -1), name='board_embedding')
+    # ])
+
     def __init__(self):
         super(BoardEmbedding, self).__init__()
 
@@ -17,24 +29,8 @@ class BoardEmbedding(layers.Layer):
             layers.Dropout(0.5),
             layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", padding='same'),
             layers.Dropout(0.5),
-            layers.Flatten(),
-            layers.Dense(config.embed_dim, activation="relu"),
-            layers.Reshape((1, -1), name='board_embedding')
-        ])
-
-
-        self.board_embedding_2 = keras.Sequential([
-            layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu", padding='same'),
-            layers.Dropout(0.5),
-            layers.Conv2D(filters=128, kernel_size=(3, 3), activation="relu", padding='same'),
-            layers.Dropout(0.5),
-            layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", padding='same'),
-            layers.Dropout(0.5),
-
             layers.Reshape((64, 256), name='board_embedding'),
         ])
-
-
         # --> Custom Transformer Design: 8x8x12 = 768
         self.flatten_layer = layers.Flatten()
         self.board_dense_embedding = layers.Dense(config.embed_dim, activation="relu")
@@ -51,11 +47,11 @@ class BoardEmbedding(layers.Layer):
         return positional_encodings
 
     def __call__(self, inputs):
-        # dense_embeddings = self.board_embedding(inputs)
-        # position_embeddings = self.positional_encodings
-        # combined_embeddings = dense_embeddings + position_embeddings
-        # return combined_embeddings
-        return self.board_embedding(inputs)
+        dense_embeddings = self.board_embedding(inputs)
+        position_embeddings = self.positional_encodings
+        combined_embeddings = dense_embeddings + position_embeddings
+        return combined_embeddings
+        # return self.board_embedding(inputs)
 
 
 
