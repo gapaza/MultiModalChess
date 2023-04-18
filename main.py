@@ -79,6 +79,7 @@ def test_chess():
 from hydra import config
 
 
+
 def test_encoding():
     move_sequence = ['a1a2', 'd5c4', 'c2c4', 'g7g6', 'b1c3', 'd7d5', 'c1f4', 'f8g7', 'f4e5', 'd5c4', 'e2e3', 'b8c6', 'd1a4', 'e8g8', 'e5f6', 'g7f6', 'f1c4', 'a7a6', 'c4d5', 'b7b5', 'a4d1', 'c8b7', 'a2a3', 'e7e6', 'd5f3', 'c6a5', 'f3b7', 'a5b7', 'b2b4']
     last_half = ['c7c5', 'b4c5', 'b7c5', 'g1f3', 'd8a5', 'd1c2', 'c5a4', 'a1c1', 'a8c8', 'e1g1', 'a5c3', 'c2e2', 'c3a3', 'c1c2', 'c8c2', 'e2c2', 'a3c3', 'c2e4', 'f8c8', 'g2g3', 'c3c2', 'e4b7', 'c2c6']
@@ -162,6 +163,7 @@ def test_encoding_2():
 
     # 3. Set all entries in inp_mask to False except for the masked indices
     print('Mask indices:', mask_indices.shape)
+    print(type(mask_indices))
     print('inp_mask:', inp_mask.shape)
     inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool), inp_mask.shape)
     print(inp_mask)
@@ -186,5 +188,61 @@ def test_encoding_2():
     y_labels = tf.identity(encoded_texts)
     print(y_labels)
 
+
+def test_encoding_3():
+    move_sequence = ['a1a2', 'd5c4', 'c2c4', 'g7g6', 'b1c3', 'd7d5', 'c1f4', 'f8g7', 'f4e5', 'd5c4', 'e2e3', 'b8c6',
+                     'd1a4', 'e8g8', 'e5f6', 'g7f6', 'f1c4', 'a7a6', 'c4d5', 'b7b5', 'a4d1', 'c8b7', 'a2a3', 'e7e6',
+                     'd5f3', 'c6a5', 'f3b7', 'a5b7', 'b2b4']
+    last_half = ['c7c5', 'b4c5', 'b7c5', 'g1f3', 'd8a5', 'd1c2', 'c5a4', 'a1c1', 'a8c8', 'e1g1', 'a5c3', 'c2e2', 'c3a3',
+                 'c1c2', 'c8c2', 'e2c2', 'a3c3', 'c2e4', 'f8c8', 'g2g3', 'c3c2', 'e4b7', 'c2c6']
+    boards = None
+
+    move_string = ' '.join(move_sequence)
+    encoded_texts = config.encode(move_string)
+    print(move_string)
+    print(encoded_texts)
+
+    # 1. Find possible masking positions
+    inp_mask = tf.random.uniform(encoded_texts.shape) <= 1.0
+    inp_mask = tf.logical_and(inp_mask, encoded_texts > 2)
+
+    # 2. Find indices where n tokens can be masked in a row
+    true_indices = tf.squeeze(tf.where(inp_mask), axis=1)
+    true_indices = true_indices[:-2]
+    rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
+    mask_start = tf.gather(true_indices, rand_idx)
+    mask_length = 3
+    mask_indices = tf.range(mask_start, mask_start + mask_length)
+
+    print(inp_mask)
+    print(inp_mask.shape)
+    print(selected_value)
+    print(mask_indices)
+    print(true_indices.shape)
+    exit(0)
+
+    # 3. Set all entries in inp_mask to False except for the masked indices
+    inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool),
+                             inp_mask.shape)
+
+    # 4. Create labels for masked tokens
+    labels = -1 * tf.ones(encoded_texts.shape, dtype=tf.int64)
+    labels = tf.where(inp_mask, encoded_texts, labels)
+
+    # 5. Create masked input
+    encoded_texts_masked = tf.identity(encoded_texts)
+    mask_token_id = config.mask_token_id
+    encoded_texts_masked = tf.where(inp_mask, mask_token_id * tf.ones_like(encoded_texts), encoded_texts)
+
+    # 6. Define loss function weights
+    sample_weights = tf.ones(labels.shape, dtype=tf.int64)
+    sample_weights = tf.where(tf.equal(labels, -1), tf.zeros_like(labels), sample_weights)
+
+    # 7. Finally define labels
+    y_labels = tf.identity(encoded_texts)
+
+    return encoded_texts_masked, y_labels, sample_weights, boards
+
+
 if __name__ == '__main__':
-    test_encoding_2()
+    test_encoding_3()

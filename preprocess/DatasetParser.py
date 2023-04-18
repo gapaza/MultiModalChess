@@ -31,10 +31,9 @@ class DatasetParser:
         # --> 3. Split into Train and Validation
         print('--> 3. Split into Train and Validation')
         split_idx = int(len(self.all_moves) * 0.9)
-        self.train_moves = self.all_moves[:split_idx]
-        self.train_boards = self.all_boards[:split_idx]
-        self.validation_moves = self.all_moves[split_idx:]
-        self.validation_boards = self.all_boards[split_idx:]
+        self.train_moves, self.validation_moves = self.all_moves[:split_idx],  self.all_moves[split_idx:]
+        self.train_boards, self.validation_boards = self.all_boards[:split_idx], self.all_boards[split_idx:]
+        self.train_next_move, self.validation_next_move = self.all_next_moves[:split_idx], self.all_next_moves[split_idx:]
 
         # --> 4. Preprocess Train and Validation Datasets
         print('--> 4. Preprocess Train and Validation Datasets')
@@ -301,20 +300,17 @@ class DatasetParser:
         encoded_texts = inputs
 
         # 1. Find possible masking positions
-        inp_mask = tf.random.uniform(encoded_texts.shape) < 1.0
+        # inp_mask.shape: (128,)
+        inp_mask = tf.random.uniform(encoded_texts.shape) <= 1.0
         inp_mask = tf.logical_and(inp_mask, encoded_texts > 2)
 
+
         # 2. Find indices where n tokens can be masked in a row
+        true_indices = tf.squeeze(tf.where(inp_mask), axis=1)
+        rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
+        mask_start = tf.gather(true_indices, rand_idx)
         mask_length = 3
-        shifted_masks = [inp_mask] + [tf.roll(inp_mask, shift=-i, axis=0) for i in range(1, mask_length)]
-        combined_mask = tf.reduce_all(shifted_masks, axis=0)
-        indices = tf.where(combined_mask)
-        indices = tf.reshape(indices, [-1])
-        mask_start = tf.random.shuffle(indices)[0]
         mask_indices = tf.range(mask_start, mask_start + mask_length)
-
-
-
 
         # 3. Set all entries in inp_mask to False except for the masked indices
         inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool),

@@ -28,8 +28,7 @@ class PositionParser:
         self.positions_dir = os.path.join(self.root_dir, 'positions')
 
         # --> All Positions
-        # self.games = self.load_games_into_lists(config.games_file, max_games=max_games)
-        # self.positions = self.parse_games(self.games)
+        # self.positions = self.load_and_parse_games(config.games_file, max_games=max_games)
 
         # --> Middlegame Positions
         self.positions = self.load_and_parse_middle_games(config.games_file, max_games=max_games)
@@ -130,6 +129,16 @@ class PositionParser:
     ### All Positions ###
     #####################
 
+
+    def load_and_parse_games(self, game_file, max_games=10000):
+        games = self.load_games_into_lists(game_file, max_games=max_games)
+        with ThreadPoolExecutor() as executor:
+            all_positions = list(tqdm(executor.map(self.parse_game, games), total=len(games)))
+
+        # --> Flatten the list of lists
+        all_positions = list(itertools.chain.from_iterable(all_positions))
+        return all_positions
+
     def load_games_into_lists(self, game_file, max_games=10000):
         games = []
         count = 0
@@ -151,15 +160,6 @@ class PositionParser:
                     continue
         print('Bad Games: ', bad_games)
         return games
-
-    def parse_games(self, games):
-        print('--> PARSING POSITIONS')
-        with ThreadPoolExecutor() as executor:
-            all_positions = list(tqdm(executor.map(self.parse_game, games), total=len(games)))
-
-        # --> Flatten the list of lists
-        all_positions = list(itertools.chain.from_iterable(all_positions))
-        return all_positions
 
     def parse_game(self, game):
         all_moves = [move for move in game.mainline_moves()]
@@ -225,4 +225,4 @@ class PositionParser:
 
 
 if __name__ == '__main__':
-    pp = PositionParser(max_games=1000000)
+    pp = PositionParser(max_games=10000)
