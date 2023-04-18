@@ -17,21 +17,21 @@ class BoardEmbedding(layers.Layer):
             layers.Dropout(0.5),
             layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", padding='same'),
             layers.Dropout(0.5),
+            layers.Flatten(),
+            layers.Dense(config.embed_dim, activation="relu"),
+            layers.Reshape((1, -1), name='board_embedding')
+        ])
 
-            # --> Transformer
+
+        self.board_embedding_2 = keras.Sequential([
+            layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu", padding='same'),
+            layers.Dropout(0.5),
+            layers.Conv2D(filters=128, kernel_size=(3, 3), activation="relu", padding='same'),
+            layers.Dropout(0.5),
+            layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", padding='same'),
+            layers.Dropout(0.5),
+
             layers.Reshape((64, 256), name='board_embedding'),
-            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
-
-            # --> Multiple Dense
-            # layers.Flatten(),
-            # layers.Dense(8192, activation="relu"),
-            # layers.Reshape((32, -1), name='board_embedding')
-
-
-            # --> Single Dense
-            # layers.Flatten(),
-            # layers.Dense(config.embed_dim, activation="relu"),
-            # layers.Reshape((1, -1), name='board_embedding')
         ])
 
 
@@ -49,17 +49,28 @@ class BoardEmbedding(layers.Layer):
         positional_encodings = tf.reshape(positional_encodings, [-1, output_dim])
         positional_encodings = tf.expand_dims(positional_encodings, 0)
         return positional_encodings
-        # return tf.Variable(initial_value=positional_encodings, trainable=False)
 
     def __call__(self, inputs):
-        # board_embedding = self.board_embedding(inputs)
-        # return board_embedding
-        # outputs = self.flatten_layer(inputs)  # (None, 786)
-        # dense_embeddings = self.board_dense_embedding(outputs)  # (None, 256)
-        dense_embeddings = self.board_embedding(inputs)
-        position_embeddings = self.positional_encodings
-        combined_embeddings = dense_embeddings + position_embeddings
-        return combined_embeddings
+        # dense_embeddings = self.board_embedding(inputs)
+        # position_embeddings = self.positional_encodings
+        # combined_embeddings = dense_embeddings + position_embeddings
+        # return combined_embeddings
+        return self.board_embedding(inputs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def get_pos_encoding_matrix(self, max_len, d_emb):

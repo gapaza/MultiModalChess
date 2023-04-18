@@ -91,7 +91,7 @@ def build_model():
     model = HydraMLM([board_inputs, move_inputs], output, name="hydra_mlm")
 
     # --> Compile Model
-    optimizer = keras.optimizers.Adam()
+    optimizer = tf.keras.optimizers.Adam()
     model.compile(optimizer=optimizer, jit_compile=False)
 
     # --> Save Model Details

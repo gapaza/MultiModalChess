@@ -206,7 +206,7 @@ class DatasetParser:
             (moves, boards)
         )
         dataset = dataset.map(
-            self.get_masked_seq_input_and_labels_tf2, num_parallel_calls=tf.data.AUTOTUNE
+            self.get_masked_seq_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
         ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
         return dataset
 
@@ -248,53 +248,6 @@ class DatasetParser:
         return encoded_texts_masked, y_labels, sample_weights, boards
 
     def get_masked_seq_input_and_labels_tf(self, inputs, boards):
-
-
-        # encoded_texts: shape(N, 128) where 128 is the max sequence length
-        # - filled with tokenized values
-        encoded_texts = inputs
-
-        # 1. Find possible masking positions
-        inp_mask = tf.random.uniform(encoded_texts.shape) <= 1.0  # Initialize all to True
-        inp_mask = tf.math.logical_and(inp_mask, encoded_texts > 2)    # Determine which tokens can be masked
-
-        # 2. Find indices where n tokens can be masked in a row
-        mask_length = 3
-        indices = tf.where(
-            tf.math.logical_and(
-                tf.math.logical_and(inp_mask[:-2], inp_mask[1:-1]),
-                inp_mask[2:]
-            )
-        )[:, 0]
-        mask_start = tf.random.shuffle(indices)[0]  # Choose a random index to start masking
-        mask_indices = tf.range(mask_start, mask_start + mask_length)
-
-        # 3. Set all entries in inp_mask to False except for the masked indices
-        inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool), inp_mask.shape)
-
-        # 4. Create labels for masked tokens
-        labels = -1 * tf.ones(encoded_texts.shape, dtype=tf.int64)
-        labels = tf.where(inp_mask, encoded_texts, labels)
-
-        # 5. Create masked input
-        encoded_texts_masked = tf.where(inp_mask, config.mask_token_id * tf.ones_like(encoded_texts), encoded_texts)
-
-        # 6. Define loss function weights
-        sample_weights = tf.ones(labels.shape)
-        sample_weights = tf.where(labels == -1, tf.zeros_like(sample_weights), sample_weights)
-
-        # 7. Finally define labels
-        y_labels = tf.identity(encoded_texts)
-
-
-        # returning encoded_texts_masked causes error
-        # returning sample_weights causes error
-        return encoded_texts_masked, y_labels, sample_weights, boards
-
-
-
-
-    def get_masked_seq_input_and_labels_tf2(self, inputs, boards):
         # encoded_texts: shape(N, 128) where 128 is the max sequence length
         # - filled with tokenized values
         encoded_texts = inputs
@@ -303,7 +256,6 @@ class DatasetParser:
         # inp_mask.shape: (128,)
         inp_mask = tf.random.uniform(encoded_texts.shape) <= 1.0
         inp_mask = tf.logical_and(inp_mask, encoded_texts > 2)
-
 
         # 2. Find indices where n tokens can be masked in a row
         true_indices = tf.squeeze(tf.where(inp_mask), axis=1)
