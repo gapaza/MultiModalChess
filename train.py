@@ -54,6 +54,9 @@ def train():
     training_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.train_dataset))
     validation_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.val_dataset))
 
+    training_dataset = training_dataset.batch(config.batch_size)
+    validation_dataset = validation_dataset.batch(config.batch_size)
+
     # --> Create Model
     model = build_model()
 
@@ -92,7 +95,7 @@ def build_model():
     model.compile(optimizer=optimizer, jit_compile=False)
 
     # --> Save Model Details
-    model.summary()
+    model.summary(expand_nested=True)
     model_img_file = os.path.join(config.models_dir, config.model_name + '.png')
     plot_model(model, to_file=model_img_file, show_shapes=True, show_layer_names=True, expand_nested=True)
     return model

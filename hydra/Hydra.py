@@ -50,8 +50,9 @@ class Hydra(layers.Layer):
         encoder_outputs = self.encoder(encoder_inputs)
 
         # --> Output Heads
-        encoder_board_output = encoder_outputs[:, :1, :]
-        encoder_move_output = encoder_outputs[:, 1:, :]
+        split_idx = 64
+        encoder_board_output = encoder_outputs[:, :split_idx, :]
+        encoder_move_output = encoder_outputs[:, split_idx:, :]
         output = []
         if self.mode == 'pretrain':
             output = self.move_mask_prediction_head(encoder_move_output)

@@ -1,21 +1,28 @@
 import tensorflow as tf
 
-# --> MLM Loss Functions
-loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(
-    reduction=tf.keras.losses.Reduction.NONE
-)
-loss_tracker = tf.keras.metrics.Mean(name="loss")
-
-accuracy_tracker = tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")
+# # --> MLM Loss Functions
+# loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(
+#     reduction=tf.keras.losses.Reduction.NONE
+# )
+# loss_tracker = tf.keras.metrics.Mean(name="loss")
+#
+# accuracy_tracker = tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")
 
 class HydraMLM(tf.keras.Model):
+
+    # Metrics Functions
+    loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(
+        reduction=tf.keras.losses.Reduction.NONE
+    )
+    loss_tracker = tf.keras.metrics.Mean(name="loss")
+    accuracy_tracker = tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")
 
     def train_step(self, inputs):
         features, labels, sample_weight, board = inputs
 
         with tf.GradientTape() as tape:
             predictions = self([board, features], training=True)
-            loss = loss_fn(labels, predictions, sample_weight=sample_weight)
+            loss = self.loss_fn(labels, predictions, sample_weight=sample_weight)
 
         # Compute gradients
         trainable_vars = self.trainable_variables
@@ -25,11 +32,11 @@ class HydraMLM(tf.keras.Model):
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
 
         # Compute our own metrics
-        loss_tracker.update_state(loss, sample_weight=sample_weight)
-        accuracy_tracker.update_state(labels, predictions, sample_weight=sample_weight)
+        self.loss_tracker.update_state(loss, sample_weight=sample_weight)
+        self.accuracy_tracker.update_state(labels, predictions, sample_weight=sample_weight)
 
         # Return a dict mapping metric names to current value
-        return {"loss": loss_tracker.result(), "accuracy": accuracy_tracker.result()}
+        return {"loss": self.loss_tracker.result(), "accuracy": self.accuracy_tracker.result()}
 
     def test_step(self, inputs):
         features, labels, sample_weight, board = inputs
@@ -37,19 +44,19 @@ class HydraMLM(tf.keras.Model):
         # Compute predictions
         predictions = self([board, features], training=False)
 
-        # Compute the loss
-        loss = loss_fn(labels, predictions, sample_weight=sample_weight)
+        # Compute the loss and update tracker
+        loss = self.loss_fn(labels, predictions, sample_weight=sample_weight)
+        self.loss_tracker.update_state(loss, sample_weight=sample_weight)
 
-        # Update the loss tracker and accuracy tracker
-        loss_tracker.update_state(loss, sample_weight=sample_weight)
-        accuracy_tracker.update_state(labels, predictions, sample_weight=sample_weight)
+        # Update accuracy tracker
+        self.accuracy_tracker.update_state(labels, predictions, sample_weight=sample_weight)
 
         # Return a dict mapping metric names to current value
-        return {"loss": loss_tracker.result(), "accuracy": accuracy_tracker.result()}
+        return {"loss": self.loss_tracker.result(), "accuracy": self.accuracy_tracker.result()}
 
     @property
     def metrics(self):
-        return [loss_tracker, accuracy_tracker]
+        return [self.loss_tracker, self.accuracy_tracker]
 
 
 

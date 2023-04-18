@@ -1,5 +1,6 @@
 # --> Python Imports
 import os
+import concurrent.futures
 import numpy as np
 import pickle
 import itertools
@@ -9,6 +10,7 @@ from tqdm import tqdm
 
 # --> Threading Imports
 from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 
 # --> Chess Imports
 import chess
@@ -25,18 +27,110 @@ class PositionParser:
         self.tokens_dir = os.path.join(self.root_dir, 'tokens')
         self.positions_dir = os.path.join(self.root_dir, 'positions')
 
-        # --> Parse Human Games, Positions
-        self.games = self.parse_games(config.games_file, max_games=max_games)
-        self.positions = self.parse_positions(self.games)
+        # --> All Positions
+        # self.games = self.load_games_into_lists(config.games_file, max_games=max_games)
+        # self.positions = self.parse_games(self.games)
+
+        # --> Middlegame Positions
+        self.positions = self.load_and_parse_middle_games(config.games_file, max_games=max_games)
 
         # --> Pickle Human Positions
-        file_name = '-'.join((config.games_file.split('/')[-1].split('.')[0].split('-')[:-1]))
-        self.human_positions_file = os.path.join(self.positions_dir, file_name + '-positions-' + str(len(self.positions)) + '.pkl')
-        with open(self.human_positions_file, 'wb') as f:
-            print('Saving positions to: ', self.human_positions_file)
-            pickle.dump(self.positions, f)
+        self.save_positions(self.positions, modifier='middlegame')
 
-    def parse_games(self, game_file, max_games=10000):
+
+    def save_positions(self, positions, modifier=None):
+        file_name = '-'.join((config.games_file.split('/')[-1].split('.')[0].split('-')[:-1]))
+        if modifier:
+            file_name += '-' + modifier
+        positions_file_name = file_name + '-positions-' + str(len(positions)) + '.pkl'
+        positions_file_path = os.path.join(self.positions_dir, positions_file_name)
+        with open(positions_file_path, 'wb') as f:
+            print('Saving positions to: ', positions_file_path)
+            pickle.dump(positions, f)
+            f.close()
+
+
+
+    ###################
+    ### Middle Game ###
+    ###################
+
+    def load_and_parse_middle_games(self, game_file, max_games=10000):
+        def parse_game(game):
+            parsed_game = self.parse_middle_game_position(game)
+            return parsed_game
+
+        print('--> LOADING AND PARSING POSITIONS')
+        all_positions = []
+        count = 0
+        bad_games = 0
+        num_threads = 12
+        with open(game_file) as pgn_file:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+                while True:
+                    try:
+                        game = chess_pgn.read_game(pgn_file)
+                        if game is None:  # End of file
+                            break
+                        future = executor.submit(parse_game, game)
+                        all_positions.append(future.result())
+                        count += 1
+                        if count >= max_games:
+                            print('MAX GAMES REACHED')
+                            break
+                    except ValueError as e:
+                        print('--> BAD GAME')
+                        bad_games += 1
+                        continue
+
+        print('Bad Games: ', bad_games)
+        return all_positions
+
+    def parse_middle_games(self, games):
+        print('--> PARSING POSITIONS')
+        # all_positions = []
+        # for game in tqdm(games):
+        #     all_positions.append(self.parse_middle_game_position(game))
+        # return all_positions
+
+        all_positions = []
+        num_threads = 12
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+            all_positions = list(tqdm(executor.map(self.parse_middle_game_position, games), total=len(games)))
+        return all_positions
+
+    def parse_middle_game_position(self, game):
+        board = game.board()
+        game_moves = list(move.uci() for move in game.mainline_moves())
+        num_moves = len(game_moves)
+        half_moves = num_moves // 2
+        next_move = None
+        half_position = []
+        for x in range(half_moves):
+            curr_move = game_moves[x]
+            next_move = game_moves[x + 1]
+            half_position.append(curr_move)
+            board.push_uci(curr_move)
+        half_board = board.copy()
+        half_board_tensor = self.board_to_tensor(half_board)
+        position_moves = ' '.join(half_position)
+        # print(position_moves)
+        # print(half_moves, half_board_tensor.shape, next_move)
+        return {
+            'moves': position_moves,
+            'board': half_board_tensor,
+            'next_move': next_move
+        }
+
+
+
+
+
+    #####################
+    ### All Positions ###
+    #####################
+
+    def load_games_into_lists(self, game_file, max_games=10000):
         games = []
         count = 0
         bad_games = 0
@@ -58,16 +152,16 @@ class PositionParser:
         print('Bad Games: ', bad_games)
         return games
 
-    def parse_positions(self, gameset):
+    def parse_games(self, games):
         print('--> PARSING POSITIONS')
         with ThreadPoolExecutor() as executor:
-            all_games = list(tqdm(executor.map(self.parse_position_fast, gameset), total=len(gameset)))
+            all_positions = list(tqdm(executor.map(self.parse_game, games), total=len(games)))
 
         # --> Flatten the list of lists
-        all_positions = list(itertools.chain.from_iterable(all_games))
+        all_positions = list(itertools.chain.from_iterable(all_positions))
         return all_positions
 
-    def parse_position_fast(self, game):
+    def parse_game(self, game):
         all_moves = [move for move in game.mainline_moves()]
         print('Game Moves: ', len(all_moves))
         if len(all_moves) == 0:
@@ -103,6 +197,14 @@ class PositionParser:
             game_data.append(move_data)
         return game_data
 
+
+
+
+
+    #######################
+    ### Board to Tensor ###
+    #######################
+
     def board_to_tensor(self, board):
         tensor = np.zeros((8, 8, 12))
         for square, piece in board.piece_map().items():
@@ -119,17 +221,8 @@ class PositionParser:
             index += 6
         return index
 
-    def split_data(self, all_games):
-        # Calculate the number of samples for train and validation sets
-        num_total_samples = len(all_games)
-        num_val_samples = int(0.15 * num_total_samples)
-        num_train_samples = num_total_samples - num_val_samples
-        # Split the data into train and validation sets
-        train_set = all_games[:num_train_samples]
-        val_set = all_games[num_train_samples:]
-        return train_set, val_set
 
 
 
 if __name__ == '__main__':
-    pp = PositionParser(max_games=100)
+    pp = PositionParser(max_games=1000000)
