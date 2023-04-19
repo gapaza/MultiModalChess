@@ -265,6 +265,7 @@ class DatasetParser:
         mask_indices = tf.range(mask_start, mask_start + mask_length)
 
         # 3. Set all entries in inp_mask to False except for the masked indices
+        inp_mask = tf.zeros((128,), dtype=tf.bool)
         inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool),
                                  inp_mask.shape)
 

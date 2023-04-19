@@ -3,6 +3,9 @@ import chess.pgn as chess_pgn
 from hydra import config
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
+import os
+import chess.engine
 
 def load_games(game_file, max_games=10000):
     games = []
@@ -44,13 +47,65 @@ def piece_to_index(piece):
     return index
 
 
+
+def test_engine():
+    import chess.engine
+    stockfish_path = '/opt/homebrew/Cellar/stockfish/15.1/bin/stockfish'
+    engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
+    print(engine.id)
+
+    # Set the maximum number of games to process
+    max_games = 1
+
+
+    # Open the PGN file
+    with open(config.games_file) as pgn_file:
+        progress_bar = tqdm(range(max_games), desc="Processing games", unit="game")
+        for _ in progress_bar:
+            game = chess.pgn.read_game(pgn_file)
+            if game is None:
+                break
+            game_moves = list(move for move in game.mainline_moves())
+            game_moves_uci = list(move.uci() for move in game_moves)
+            middle_game = len(game_moves) // 2
+            board = game.board()
+            next_move = game_moves[0]
+            for x in range(middle_game):
+                move = game_moves[x]
+                next_move = game_moves[x + 1]
+                board.push(move)
+            print('Analyzing board')
+            info = engine.analyse(board, chess.engine.Limit(time=5), multipv=5)
+            for idx, variation in enumerate(info, start=1):
+                move = variation.get("pv")[0]
+                score = variation.get("score")
+                if board.turn == chess.BLACK:
+                    score = score.relative.score()
+                print(f"{idx}. {move} ({score}) {middle_game}")
+
+
+
+
+
+        progress_bar.close()
+        engine.quit()
+
+
+
+
+
 def test_chess():
+
+
     games = load_games(config.games_file, max_games=10)
     print(len(games))
     positions = []
     for game in games:
         board = game.board()
         game_moves = list(move.uci() for move in game.mainline_moves())
+
+
+
         print(game_moves)
         exit(0)
         num_moves = len(game_moves)
@@ -216,7 +271,6 @@ def test_encoding_3():
 
     print(inp_mask)
     print(inp_mask.shape)
-    print(selected_value)
     print(mask_indices)
     print(true_indices.shape)
     exit(0)
@@ -244,5 +298,40 @@ def test_encoding_3():
     return encoded_texts_masked, y_labels, sample_weights, boards
 
 
+
+
+
+def parse_epd_line(line):
+    epd_parts = line.split(";")
+    fen = epd_parts[0].strip()
+    evaluation = float(epd_parts[1].split("=")[1].strip())
+    return fen, evaluation
+
+def process_epd_file(file_path):
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+
+    positions_and_evaluations = [parse_epd_line(line) for line in lines]
+
+    for fen, evaluation in positions_and_evaluations:
+        board = chess.Board(fen)
+
+        # Perform any operation you want with the board and evaluation, e.g. print the board and evaluation
+        print(board)
+        print("Evaluation:", evaluation)
+
+
+
+def test_epd():
+    epd_directory = "path/to/your/epd_directory"
+
+    # Iterate through all the .epd files in the directory
+    for file_name in os.listdir(epd_directory):
+        if file_name.endswith(".epd"):
+            file_path = os.path.join(epd_directory, file_name)
+            process_epd_file(file_path)
+
+
+
 if __name__ == '__main__':
-    test_encoding_3()
+    test_engine()
