@@ -1,7 +1,6 @@
 from keras import layers
 import keras
 from hydra import config
-from keras_nlp.layers import TransformerEncoder
 import numpy as np
 import tensorflow as tf
 

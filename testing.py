@@ -40,8 +40,11 @@ def get_board_tensor_from_moves(move_tokens, move_idx):
     move_idx = move_idx.numpy()
     moves = [config.id2token[token_id] for token_id in move_tokens.numpy()]
     board = chess.Board()
-    for i in range(move_idx+1):
-        board.push_uci(moves[i])
+    try:
+        for i in range(move_idx+1):
+            board.push_uci(moves[i])
+    except Exception as e:
+        print('--> INVALID MOVE')
     return BoardOperations.board_to_tensor(board)
 
 

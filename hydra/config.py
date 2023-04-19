@@ -34,7 +34,7 @@ positions_save_dir = os.path.join(positions_dir, 'human-middlegames')
 ##### Parsing Positions Into Datasets #####
 ###########################################
 
-positions_load_dir = os.path.join(positions_dir, 'human-middlegames')
+positions_load_dir = os.path.join(positions_dir, 'human-rand-games')
 
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-1000.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-10000.pkl')
@@ -53,8 +53,8 @@ positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-
 #############################
 ##### Training Settings #####
 #############################
-train_dataset = 'train-dataset-10k'
-val_dataset = 'val-dataset-10k'
+train_dataset = 'train-dataset-1000000'
+val_dataset = 'val-dataset-1000000'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 64  # 32 64 128
@@ -62,7 +62,7 @@ seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file
 embed_dim = 256  # 512 too much
 encoder_dense_dim = 2048  # 2048
-encoder_heads = 12
+encoder_heads = 48
 
 
 
@@ -89,7 +89,7 @@ def custom_standardization(input_data):
 
 
 special_tokens=["[mask]"]
-vocab_file = os.path.join(root_dir, 'tokens', 'tokens_1946.pkl')
+vocab_file = os.path.join(root_dir, 'tokens', 'tokens_1966.pkl')
 vocab = []
 with open(vocab_file, 'rb') as f:
     vocab = list(pickle.load(f))
