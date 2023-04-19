@@ -5,25 +5,42 @@ import pickle
 #######################
 ##### Directories #####
 #######################
+
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 datasets_dir = os.path.join(root_dir, 'datasets')
 models_dir = os.path.join(root_dir, 'models')
+positions_dir = os.path.join(root_dir, 'positions')
+games_dir = os.path.join(root_dir, 'games')
+tokens_dir = os.path.join(root_dir, 'tokens')
 
 
-####################
-##### Datasets #####
-####################
+
+########################################
+##### Parsing Games Into Positions #####
+########################################
+
+# --> Game File Input
 games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
 # games_file = os.path.join(root_dir, 'games', 'computer-training-games.pgn')
 
+# --> Save Positions Directory
+positions_save_dir = os.path.join(positions_dir, 'human-middlegames')
 
+
+
+
+
+###########################################
+##### Parsing Positions Into Datasets #####
+###########################################
+
+positions_load_dir = os.path.join(positions_dir, 'human-middlegames')
 
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-1000.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-10000.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-100000.pkl')
+positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-100000.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-1000000.pkl')
-positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-3000000.pkl')
-
+# positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-3000000.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-627.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-6224.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-72753.pkl')

@@ -18,9 +18,8 @@ class DatasetParser:
 
         # --> 1. Get Position Data
         print('--> 1. Get Position Data')
-        self.all_positions = self.load_positions(config.positions_file)
+        self.all_positions = self.load_positions_dir(config.positions_load_dir)
         self.all_positions = self.all_positions.sample(frac=1).reset_index(drop=True)
-        self.num_positions = config.positions_file.split('-')[-1].split('.')[0]
 
         # --> 2. Encode Moves and Extract Boards
         print('--> 2. Encode Moves and Extract Boards')
@@ -45,8 +44,10 @@ class DatasetParser:
 
         # --> 5. Save Datasets
         print('--> 5. Save Datasets')
-        train_path = os.path.join(config.datasets_dir, 'train-dataset-' + str(self.num_positions))
-        val_path = os.path.join(config.datasets_dir, 'val-dataset-' + str(self.num_positions))
+        num_positions = int(len(self.all_positions) / 1000)
+        num_positions = f"{num_positions}k"
+        train_path = os.path.join(config.datasets_dir, 'train-dataset-' + num_positions)
+        val_path = os.path.join(config.datasets_dir, 'val-dataset-' + num_positions)
         self.train_dataset.save(train_path)
         self.val_dataset.save(val_path)
 
@@ -57,12 +58,30 @@ class DatasetParser:
         with open(positions_file, 'rb') as f:
             positions = pickle.load(f)
         all_data = pd.DataFrame(positions)
+        all_data = self.prune_positions(all_data)
+        return all_data
 
+
+    def load_positions_dir(self, positions_dir):
+        # Iterate and open all files in dir with pickle
+        positions = []
+        for filename in os.listdir(positions_dir):
+            print('--> Load Positions: ', filename)
+            with open(os.path.join(positions_dir, filename), 'rb') as f:
+                positions += pickle.load(f)
+            f.close()
+        all_data = pd.DataFrame(positions)
+        all_data = self.prune_positions(all_data)
+        return all_data
+
+    def prune_positions(self, all_data):
         # --> Conditions for dropping positions
         # 1. No moves exist
         all_data = all_data[all_data['moves'] != '']
         all_data.reset_index(drop=True, inplace=True)
         return all_data
+
+
 
 
     """
