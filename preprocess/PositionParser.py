@@ -17,8 +17,11 @@ import chess
 import chess.pgn as chess_pgn
 
 from hydra import config
+
+
 import threading
 import multiprocessing
+multiprocessing.set_start_method('fork')
 
 
 class PositionParser:
@@ -431,4 +434,4 @@ class PositionParser:
 
 
 if __name__ == '__main__':
-    pp = PositionParser(max_games=100000, chunk_size=10000)
+    pp = PositionParser(max_games=3000000, chunk_size=10000)
