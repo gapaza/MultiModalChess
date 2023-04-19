@@ -7,6 +7,8 @@ import pickle
 import re
 import shutil
 
+from testing import get_board_tensor_from_moves
+
 from hydra import config
 import sys
 
@@ -24,25 +26,30 @@ class DatasetParser:
         # --> 2. Encode Moves and Extract Boards
         print('--> 2. Encode Moves and Extract Boards')
         self.all_moves = config.encode(self.all_positions.moves.values.tolist())
-        self.all_next_moves = config.encode(self.all_positions.next_move.values.tolist())
-        self.all_boards = self.all_positions.board.values.tolist()
+        # self.all_next_moves = config.encode(self.all_positions.next_move.values.tolist())
+        # self.all_boards = self.all_positions.board.values.tolist()
 
         # --> 3. Split into Train and Validation
         print('--> 3. Split into Train and Validation')
         split_idx = int(len(self.all_moves) * 0.9)
         self.train_moves, self.validation_moves = self.all_moves[:split_idx],  self.all_moves[split_idx:]
-        self.train_boards, self.validation_boards = self.all_boards[:split_idx], self.all_boards[split_idx:]
-        self.train_next_move, self.validation_next_move = self.all_next_moves[:split_idx], self.all_next_moves[split_idx:]
+        # self.train_boards, self.validation_boards = self.all_boards[:split_idx], self.all_boards[split_idx:]
+        # self.train_next_move, self.validation_next_move = self.all_next_moves[:split_idx], self.all_next_moves[split_idx:]
 
         # --> 4. Preprocess Train and Validation Datasets
         print('--> 4. Preprocess Train and Validation Datasets')
         # self.train_dataset = self.preprocess(self.train_moves, self.train_boards, self.get_masked_input_and_labels_tf)
         # self.val_dataset = self.preprocess(self.validation_moves, self.validation_boards, self.get_masked_input_and_labels_tf)
         #
-        self.train_dataset = self.preprocess(self.train_moves, self.train_boards,
-                                             self.get_masked_seq_input_and_labels_tf)
-        self.val_dataset = self.preprocess(self.validation_moves, self.validation_boards,
-                                           self.get_masked_seq_input_and_labels_tf)
+        # self.train_dataset = self.preprocess(self.train_moves, self.train_boards,
+        #                                      self.get_masked_seq_input_and_labels_tf)
+        # self.val_dataset = self.preprocess(self.validation_moves, self.validation_boards,
+        #                                    self.get_masked_seq_input_and_labels_tf)
+
+        self.train_dataset = self.preprocess_moves_only(self.train_moves,
+                                             self.pretraining_sequence_preprocessing_custom)
+        self.val_dataset = self.preprocess_moves_only(self.validation_moves,
+                                           self.pretraining_sequence_preprocessing_custom)
 
 
         # --> 5. Save Datasets
@@ -53,6 +60,8 @@ class DatasetParser:
         val_path = os.path.join(config.datasets_dir, 'val-dataset-' + num_positions)
         self.train_dataset.save(train_path)
         self.val_dataset.save(val_path)
+        print('Train Dataset: ', train_path)
+        print('Val Dataset: ', val_path)
 
     def load_positions(self, positions_file):
         print('Positions file: ', config.positions_file)
@@ -71,6 +80,7 @@ class DatasetParser:
             with open(os.path.join(positions_dir, filename), 'rb') as f:
                 positions += pickle.load(f)
             f.close()
+            # break
         all_data = pd.DataFrame(positions)
         all_data = self.prune_positions(all_data)
         return all_data
@@ -101,6 +111,17 @@ class DatasetParser:
         print('buffer_size', buffer_size)
         dataset = tf.data.Dataset.from_tensor_slices(
             (moves, boards)
+        )
+        dataset = dataset.map(
+            preprocess_func, num_parallel_calls=tf.data.AUTOTUNE
+        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
+        return dataset
+
+    def preprocess_moves_only(self, encoded_moves, preprocess_func):
+        buffer_size = len(encoded_moves)
+        print('buffer_size', buffer_size)
+        dataset = tf.data.Dataset.from_tensor_slices(
+            (encoded_moves)
         )
         dataset = dataset.map(
             preprocess_func, num_parallel_calls=tf.data.AUTOTUNE
@@ -258,7 +279,7 @@ class DatasetParser:
 
         return encoded_texts_masked, y_labels, sample_weights, boards
 
-    def get_masked_seq_input_and_labels_tf(self, inputs, boards):
+    def get_masked_seq_input_and_labels_tf(self, inputs, board):
         # encoded_texts: shape(128,) where 128 is the max sequence length
         # - filled with tokenized values
         encoded_texts = inputs
@@ -296,19 +317,127 @@ class DatasetParser:
         # 7. Finally define labels
         y_labels = tf.identity(encoded_texts)
 
-        return encoded_texts_masked, y_labels, sample_weights, boards
-
-
+        return encoded_texts_masked, y_labels, sample_weights, board
 
     ######################################################
     ### Pretraining Position Targeted Sequence Dataset ###
     ######################################################
 
-    def get_masked_seq_input_and_labels_position_targeted(self, inputs, boards):
+    def get_masked_seq_input_and_labels_position_targeted(self, inputs, board, mask_pos):
+        encoded_texts = inputs
+
+        # 1. Find possible masking positions
+        # inp_mask.shape: (128,)
+        inp_mask = tf.random.uniform(encoded_texts.shape) <= 1.0
+        inp_mask = tf.logical_and(inp_mask, encoded_texts > 2)
+
+        # --> Mask of length 3
+        mask_length = 3
+        mask_start = mask_pos - 1
+        mask_indices = tf.range(mask_start, mask_start + mask_length)
+
+        # --> Mask of length 5
+        # mask_length = 5
+        # mask_start = mask_pos - 2
+        # mask_indices = tf.range(mask_start, mask_start + mask_length)
+
+        # 3. Set all entries in inp_mask to False except for the masked indices
+        inp_mask = tf.zeros((128,), dtype=tf.bool)
+        inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool),
+                                 inp_mask.shape)
+
+        # 4. Create labels for masked tokens
+        labels = -1 * tf.ones(encoded_texts.shape, dtype=tf.int64)
+        labels = tf.where(inp_mask, encoded_texts, labels)
+
+        # 5. Create masked input
+        encoded_texts_masked = tf.identity(encoded_texts)
+        mask_token_id = config.mask_token_id
+        encoded_texts_masked = tf.where(inp_mask, mask_token_id * tf.ones_like(encoded_texts), encoded_texts)
+
+        # 6. Define loss function weights
+        sample_weights = tf.ones(labels.shape, dtype=tf.int64)
+        sample_weights = tf.where(tf.equal(labels, -1), tf.zeros_like(labels), sample_weights)
+
+        # 7. Finally define labels
+        y_labels = tf.identity(encoded_texts)
+
+        return encoded_texts_masked, y_labels, sample_weights, board
+
+
         return 0
 
 
 
+
+    ##########################
+    ### Pretraining Custom ###
+    ##########################
+
+    def pretraining_sequence_preprocessing_custom(self, encoded_texts):
+        print('Custom Preprocess')
+
+        # 1. Find possible masking positions
+        # inp_mask.shape: (128,)
+        inp_mask = tf.random.uniform(encoded_texts.shape) <= 1.0
+        inp_mask = tf.logical_and(inp_mask, encoded_texts > 2)
+
+        true_indices = tf.where(inp_mask)
+        first_true_index = true_indices[0]
+        inp_mask = tf.concat([
+            inp_mask[:first_true_index[0]],
+            [False],
+            inp_mask[first_true_index[0] + 1:]
+        ], axis=0)
+
+        last_true_index = true_indices[-1]
+        inp_mask = tf.concat([
+            inp_mask[:last_true_index[0]],
+            [False],
+            inp_mask[last_true_index[0] + 1:]
+        ], axis=0)
+
+        # 2. Find center point where 3 tokens can be masked by a mask slide
+        true_indices = tf.squeeze(tf.where(inp_mask), axis=1)
+        rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
+        mask_center = tf.gather(true_indices, rand_idx)
+        mask_start = mask_center - 1
+        mask_length = 3
+        mask_indices = tf.range(mask_start, mask_start + mask_length)
+
+        # 3. Set all entries in inp_mask to False except for the masked indices
+        inp_mask = tf.zeros((128,), dtype=tf.bool)
+        inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool),
+                                 inp_mask.shape)
+
+        # 3.1 Get board tensor using tf.py_function to call get_board_tensor_from_moves
+        board_tensor = tf.py_function(get_board_tensor_from_moves, [encoded_texts, mask_center], tf.int64)
+        board_tensor.set_shape((8, 8, 12))
+
+
+        # 4. Create labels for masked tokens
+        labels = -1 * tf.ones(encoded_texts.shape, dtype=tf.int64)
+        labels = tf.where(inp_mask, encoded_texts, labels)
+
+        # 5. Create masked input
+        encoded_texts_masked = tf.identity(encoded_texts)
+        mask_token_id = config.mask_token_id
+        encoded_texts_masked = tf.where(inp_mask, mask_token_id * tf.ones_like(encoded_texts), encoded_texts)
+
+        # 6. Define loss function weights
+        sample_weights = tf.ones(labels.shape, dtype=tf.int64)
+        sample_weights = tf.where(tf.equal(labels, -1), tf.zeros_like(labels), sample_weights)
+
+        # 7. Finally define labels
+        y_labels = tf.identity(encoded_texts)
+
+        # 8. Print all returns
+        print('Encoded Texts Masked: ', encoded_texts_masked)
+        print('Sample Weights: ', sample_weights)
+        print('Y Labels: ', y_labels)
+        # print('Board: ', board)
+
+        return encoded_texts_masked, y_labels, sample_weights, board_tensor
 
 
     ##################

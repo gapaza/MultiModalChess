@@ -53,8 +53,8 @@ positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-
 #############################
 ##### Training Settings #####
 #############################
-train_dataset = 'train-dataset-1000000'
-val_dataset = 'val-dataset-1000000'
+train_dataset = 'train-dataset-10k'
+val_dataset = 'val-dataset-10k'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 64  # 32 64 128
