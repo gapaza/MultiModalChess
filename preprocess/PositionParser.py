@@ -57,11 +57,10 @@ class PositionParser:
             parsed_chunk = []
             for idx, game in enumerate(chunk):
                 parsed_chunk.append(process_func(game))
-                if idx % 100000 == 0:
-                    print('--> 10000 GAMES PARSED OF CHUNK', chunk_num)
             with open(output_file, 'wb') as f:
                 pickle.dump(parsed_chunk, f)
             f.close()
+            print('--> FINISHED PROC CHUNK', chunk_num)
 
         # 1. Iterate over all games, aggregate list of games of size batch
         # 2. When batch limit is reached, start new thread that processes batch
@@ -69,7 +68,7 @@ class PositionParser:
         process_list = []
 
         with open(game_file) as pgn_file:
-            for i in tqdm(range(max_games), desc="Applying offset", unit="game"):
+            for i in tqdm(range(max_games), desc="Parsing Games", unit="game"):
                 try:
                     game = chess.pgn.read_game(pgn_file)
                     if game is None:  # End of file
@@ -434,4 +433,4 @@ class PositionParser:
 
 
 if __name__ == '__main__':
-    pp = PositionParser(max_games=3000000, chunk_size=10000)
+    pp = PositionParser(max_games=3000000, chunk_size=100000)
