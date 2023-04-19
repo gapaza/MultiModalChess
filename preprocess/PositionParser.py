@@ -63,7 +63,7 @@ class PositionParser:
         all_positions = []
         count = 0
         bad_games = 0
-        num_threads = 12
+        num_threads = 128
         with open(game_file) as pgn_file:
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
                 while True:
@@ -132,7 +132,7 @@ class PositionParser:
 
     def load_and_parse_games(self, game_file, max_games=10000):
         games = self.load_games_into_lists(game_file, max_games=max_games)
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=64) as executor:
             all_positions = list(tqdm(executor.map(self.parse_game, games), total=len(games)))
 
         # --> Flatten the list of lists
@@ -225,4 +225,4 @@ class PositionParser:
 
 
 if __name__ == '__main__':
-    pp = PositionParser(max_games=10000)
+    pp = PositionParser(max_games=1000000)

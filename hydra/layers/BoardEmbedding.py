@@ -23,12 +23,12 @@ class BoardEmbedding(layers.Layer):
         super(BoardEmbedding, self).__init__()
 
         self.board_embedding = keras.Sequential([
-            layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu", padding='same'),
-            layers.Dropout(0.5),
-            layers.Conv2D(filters=128, kernel_size=(3, 3), activation="relu", padding='same'),
-            layers.Dropout(0.5),
             layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", padding='same'),
-            layers.Dropout(0.5),
+            # layers.Dropout(0.5),
+            # layers.Conv2D(filters=128, kernel_size=(3, 3), activation="relu", padding='same'),
+            # layers.Dropout(0.5),
+            # layers.Conv2D(filters=256, kernel_size=(3, 3), activation="relu", padding='same'),
+            # layers.Dropout(0.5),
             layers.Reshape((64, 256), name='board_embedding'),
         ])
         # --> Custom Transformer Design: 8x8x12 = 768
@@ -48,9 +48,9 @@ class BoardEmbedding(layers.Layer):
 
     def __call__(self, inputs):
         dense_embeddings = self.board_embedding(inputs)
-        position_embeddings = self.positional_encodings
-        combined_embeddings = dense_embeddings + position_embeddings
-        return combined_embeddings
+        # position_embeddings = self.positional_encodings
+        # combined_embeddings = dense_embeddings + position_embeddings
+        return dense_embeddings
         # return self.board_embedding(inputs)
 
 

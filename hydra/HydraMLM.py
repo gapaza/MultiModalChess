@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import tensorflow_ranking as tfr
 # # --> MLM Loss Functions
 # loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(
 #     reduction=tf.keras.losses.Reduction.NONE
@@ -7,6 +7,10 @@ import tensorflow as tf
 # loss_tracker = tf.keras.metrics.Mean(name="loss")
 #
 # accuracy_tracker = tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")
+
+
+ranking_loss = tfr.keras.losses.get(tfr.keras.losses.RankingLossKey.LIST_MLE_LOSS)
+
 
 class HydraMLM(tf.keras.Model):
 
