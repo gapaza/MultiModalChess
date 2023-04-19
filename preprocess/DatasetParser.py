@@ -36,10 +36,13 @@ class DatasetParser:
 
         # --> 4. Preprocess Train and Validation Datasets
         print('--> 4. Preprocess Train and Validation Datasets')
-        # self.train_dataset = self.pretraining_preprocessing(self.train_moves, self.train_boards)
-        # self.val_dataset = self.pretraining_preprocessing(self.validation_moves, self.validation_boards)
-        self.train_dataset = self.pretraining_sequence_preprocessing(self.train_moves, self.train_boards)
-        self.val_dataset = self.pretraining_sequence_preprocessing(self.validation_moves, self.validation_boards)
+        # self.train_dataset = self.preprocess(self.train_moves, self.train_boards, self.get_masked_input_and_labels_tf)
+        # self.val_dataset = self.preprocess(self.validation_moves, self.validation_boards, self.get_masked_input_and_labels_tf)
+        #
+        self.train_dataset = self.preprocess(self.train_moves, self.train_boards,
+                                             self.get_masked_seq_input_and_labels_tf)
+        self.val_dataset = self.preprocess(self.validation_moves, self.validation_boards,
+                                           self.get_masked_seq_input_and_labels_tf)
 
 
         # --> 5. Save Datasets
@@ -93,21 +96,22 @@ class DatasetParser:
                       |_|                                     
     """
 
-
-    ###########################
-    ### Pretraining Dataset ###
-    ###########################
-
-    def pretraining_preprocessing(self, moves, boards):
+    def preprocess(self, moves, boards, preprocess_func):
         buffer_size = len(moves)
         print('buffer_size', buffer_size)
         dataset = tf.data.Dataset.from_tensor_slices(
             (moves, boards)
         )
         dataset = dataset.map(
-            self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
+            preprocess_func, num_parallel_calls=tf.data.AUTOTUNE
         ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
         return dataset
+
+
+    ###########################
+    ### Pretraining Dataset ###
+    ###########################
+
 
     def get_masked_input_and_labels(self, inputs, boards):
 
@@ -216,16 +220,6 @@ class DatasetParser:
     ### Pretraining Sequence Dataset ###
     ####################################
 
-    def pretraining_sequence_preprocessing(self, moves, boards):
-        buffer_size = len(moves)
-        print('buffer_size', buffer_size)
-        dataset = tf.data.Dataset.from_tensor_slices(
-            (moves, boards)
-        )
-        dataset = dataset.map(
-            self.get_masked_seq_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
-        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
-        return dataset
 
     def get_masked_seq_input_and_labels(self, inputs, boards):
 
@@ -265,7 +259,7 @@ class DatasetParser:
         return encoded_texts_masked, y_labels, sample_weights, boards
 
     def get_masked_seq_input_and_labels_tf(self, inputs, boards):
-        # encoded_texts: shape(N, 128) where 128 is the max sequence length
+        # encoded_texts: shape(128,) where 128 is the max sequence length
         # - filled with tokenized values
         encoded_texts = inputs
 
@@ -303,6 +297,46 @@ class DatasetParser:
         y_labels = tf.identity(encoded_texts)
 
         return encoded_texts_masked, y_labels, sample_weights, boards
+
+
+
+    ######################################################
+    ### Pretraining Position Targeted Sequence Dataset ###
+    ######################################################
+
+    def get_masked_seq_input_and_labels_position_targeted(self, inputs, boards):
+        return 0
+
+
+
+
+
+    ##################
+    ### Deprecated ###
+    ##################
+
+    def pretraining_sequence_preprocessing(self, moves, boards):
+        buffer_size = len(moves)
+        print('buffer_size', buffer_size)
+        dataset = tf.data.Dataset.from_tensor_slices(
+            (moves, boards)
+        )
+        dataset = dataset.map(
+            self.get_masked_seq_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
+        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
+        return dataset
+
+    def pretraining_preprocessing(self, moves, boards):
+        buffer_size = len(moves)
+        print('buffer_size', buffer_size)
+        dataset = tf.data.Dataset.from_tensor_slices(
+            (moves, boards)
+        )
+        dataset = dataset.map(
+            self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
+        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
+        return dataset
+
 
 
 
