@@ -51,7 +51,6 @@ class DatasetParser:
         self.train_dataset.save(train_path)
         self.val_dataset.save(val_path)
 
-
     def load_positions(self, positions_file):
         print('Positions file: ', config.positions_file)
         positions = []
@@ -60,7 +59,6 @@ class DatasetParser:
         all_data = pd.DataFrame(positions)
         all_data = self.prune_positions(all_data)
         return all_data
-
 
     def load_positions_dir(self, positions_dir):
         # Iterate and open all files in dir with pickle

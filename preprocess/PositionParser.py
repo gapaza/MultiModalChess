@@ -18,6 +18,7 @@ import chess.pgn as chess_pgn
 
 from hydra import config
 import threading
+import multiprocessing
 
 
 class PositionParser:
@@ -30,111 +31,88 @@ class PositionParser:
         if not os.path.exists(config.positions_save_dir):
             os.makedirs(config.positions_save_dir)
 
-        # --> All Positions
-        # self.positions = self.load_and_parse_games(config.games_file, max_games=max_games)
+        # --> Determine Parsing Func
+        parsing_func = self.parse_middle_game
 
-        # --> Middlegame Positions
-        self.parse_middle_games(config.games_file, config.positions_save_dir, max_games=max_games, chunk_size=chunk_size)
-
-        # --> Pickle Human Positions
-        # self.save_positions(self.positions, modifier='middlegame-2')
-
-        # --> Targeted Masking
-        # self.load_and_parse_targeted_masking(config.games_file, max_games=max_games)
+        # --> Parse Games
+        self.parse_games(config.games_file, config.positions_save_dir, parsing_func, max_games=max_games, chunk_size=chunk_size)
 
 
-    def save_positions(self, positions, modifier=None):
-        file_name = '-'.join((config.games_file.split('/')[-1].split('.')[0].split('-')[:-1]))
-        if modifier:
-            file_name += '-' + modifier
-        positions_file_name = file_name + '-positions-' + str(len(positions)) + '.pkl'
-        positions_file_path = os.path.join(self.positions_dir, positions_file_name)
-        with open(positions_file_path, 'wb') as f:
-            print('Saving positions to: ', positions_file_path)
-            pickle.dump(positions, f)
+    """
+     _____                           _____                              
+    |  __ \                         / ____|                             
+    | |__) |__ _  _ __  ___   ___  | |  __   __ _  _ __ ___    ___  ___ 
+    |  ___// _` || '__|/ __| / _ \ | | |_ | / _` || '_ ` _ \  / _ \/ __|
+    | |   | (_| || |   \__ \|  __/ | |__| || (_| || | | | | ||  __/\__ \
+    |_|    \__,_||_|   |___/ \___|  \_____| \__,_||_| |_| |_| \___||___/
+                            
+    """
+
+    def parse_games(self, game_file, save_dir, process_func, max_games=100000, chunk_size=10000):
+
+        def parse_chunk(chunk, output_file, chunk_num):
+            parsed_chunk = []
+            for idx, game in enumerate(chunk):
+                parsed_chunk.append(process_func(game))
+                if idx % 100000 == 0:
+                    print('--> 10000 GAMES PARSED OF CHUNK', chunk_num)
+            with open(output_file, 'wb') as f:
+                pickle.dump(parsed_chunk, f)
             f.close()
 
-    def save_positions_chunk(self, positions, modifier=None, dir_name='millionbase_full'):
-        save_dir = os.path.join(self.positions_dir, dir_name)
-        file_name = 'chunk-'
-        files = os.listdir(save_dir)
-        n = sum([1 for file in files if file.startswith('chunk-')])
+        # 1. Iterate over all games, aggregate list of games of size batch
+        # 2. When batch limit is reached, start new thread that processes batch
+        game_batch = []
+        process_list = []
 
-        if modifier:
-            file_name += '-' + modifier
+        with open(game_file) as pgn_file:
+            for i in tqdm(range(max_games), desc="Applying offset", unit="game"):
+                try:
+                    game = chess.pgn.read_game(pgn_file)
+                    if game is None:  # End of file
+                        break
+                except ValueError as e:
+                    continue
+                game_batch.append(game)
+                if len(game_batch) >= chunk_size:
+                    chunk_num = len(process_list)
+                    # start a new thread to process the batch
+                    print('--> STARTING PROC')
+                    file_name = 'middle-games-' + str(chunk_num) + '.pkl'
+                    file_path = os.path.join(save_dir, file_name)
 
-        positions_file_name = file_name + str(n) + '-positions-' + str(len(positions)) + '.pkl'
-        positions_file_path = os.path.join(save_dir, positions_file_name)
-        with open(positions_file_path, 'wb') as f:
-            print('Saving positions to: ', positions_file_path)
-            pickle.dump(positions, f)
+                    process = multiprocessing.Process(target=parse_chunk, args=(game_batch, file_path, chunk_num))
+                    process.start()
+                    process_list.append(process)
+
+                    # thread = threading.Thread(target=parse_chunk, args=(game_batch, file_path, chunk_num))
+                    # thread.start()
+                    # thread_list.append(thread)
+
+                    game_batch = []
+
+        for th in process_list:
+            th.join()
 
 
+
+
+    """
+     _____                                                    
+    |  __ \                                                   
+    | |__) |_ __  ___  _ __   _ __  ___    ___  ___  ___  ___ 
+    |  ___/| '__|/ _ \| '_ \ | '__|/ _ \  / __|/ _ \/ __|/ __|
+    | |    | |  |  __/| |_) || |  | (_) || (__|  __/\__ \\__ \
+    |_|    |_|   \___|| .__/ |_|   \___/  \___|\___||___/|___/
+                      | |                                     
+                      |_| 
+    """
 
     ########################
     ### Targeted Masking ###
     ########################
 
-    def load_and_parse_targeted_masking(self, game_file, max_games=10000):
-        def parse_game(game):
-            parsed_game = self.parse_targeted_game(game)
-            return parsed_game
-
-        def parse_chunk(chunk):
-            parsed_chunk = [parse_game(game) for game in chunk]
-            return parsed_chunk
-
-        def chunk_games(games_list, chunk_size):
-            for i in range(0, len(games_list), chunk_size):
-                yield games_list[i:i + chunk_size]
-
-        print('--> LOADING AND PARSING POSITIONS')
-        all_positions = []
-        bad_games = 0
-        num_threads = 24
-
-        with open(game_file) as pgn_file:
-            games = []
-            count = 0
-            progress_bar = tqdm(range(max_games), desc="Loading games", unit="game")
-            for _ in progress_bar:
-                try:
-                    game = chess.pgn.read_game(pgn_file)
-                    if game is None:  # End of file
-                        break
-                    games.append(game)
-                    count += 1
-                    if count >= max_games:
-                        print('MAX GAMES REACHED')
-                        break
-                except ValueError as e:
-                    print('--> BAD GAME')
-                    bad_games += 1
-                    continue
-            progress_bar.close()
-
-        chunk_size = len(games) // num_threads
-
-        with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            chunked_games = list(chunk_games(games, chunk_size))
-            progress_bar = tqdm(total=len(games), desc="Processing games", unit="game")
-            for results in executor.map(parse_chunk, chunked_games):
-                for result in results:
-                    all_positions.append(result)
-                    progress_bar.update(1)
-                    save_point = 10000
-                    if len(all_positions) % save_point == 0:
-                        print('Saving positions...')
-                        # modifier is targeted-masking and the size of all_positions - save_point
-                        self.save_positions_chunk(all_positions, modifier='targeted-masking')
-                        all_positions = []
-
-
-            progress_bar.close()
-
-        print('Bad Games: ', bad_games)
-
-    def parse_targeted_game(self, game):
+    def parse_full_game(self, game):
         board = game.board()
         game_moves = list(move.uci() for move in game.mainline_moves())
         num_moves = len(game_moves)
@@ -152,50 +130,9 @@ class PositionParser:
 
 
 
-
     ###################
     ### Middle Game ###
     ###################
-
-    def parse_middle_games(self, game_file, save_dir, max_games=100000, chunk_size=10000):
-
-        def parse_chunk(chunk, output_file, chunk_num):
-            parsed_chunk = []
-            for idx, game in enumerate(chunk):
-                parsed_chunk.append(self.parse_middle_game(game))
-                if idx % 10000 == 0:
-                    print('--> 10000 GAMES PARSED OF CHUNK', chunk_num)
-            with open(output_file, 'wb') as f:
-                pickle.dump(parsed_chunk, f)
-            f.close()
-
-        # 1. Iterate over all games, aggregate list of games of size batch
-        # 2. When batch limit is reached, start new thread that processes batch
-        game_batch = []
-        thread_list = []
-
-        with open(game_file) as pgn_file:
-            for i in tqdm(range(max_games), desc="Applying offset", unit="game"):
-                try:
-                    game = chess.pgn.read_game(pgn_file)
-                    if game is None:  # End of file
-                        break
-                except ValueError as e:
-                    continue
-                game_batch.append(game)
-                if len(game_batch) >= chunk_size:
-                    chunk_num = len(thread_list)
-                    # start a new thread to process the batch
-                    print('--> STARTING THREAD')
-                    file_name = 'middle-games-' + str(chunk_num) + '.pkl'
-                    file_path = os.path.join(save_dir, file_name)
-                    thread = threading.Thread(target=parse_chunk, args=(game_batch, file_path, chunk_num))
-                    thread.start()
-                    thread_list.append(thread)
-                    game_batch = []
-
-        for th in thread_list:
-            th.join()
 
     def parse_middle_game(self, game):
         board = game.board()
@@ -220,44 +157,11 @@ class PositionParser:
 
 
 
-
     #####################
     ### All Positions ###
     #####################
 
-
-    def load_and_parse_games(self, game_file, max_games=10000):
-        games = self.load_games_into_lists(game_file, max_games=max_games)
-        with ThreadPoolExecutor(max_workers=64) as executor:
-            all_positions = list(tqdm(executor.map(self.parse_game, games), total=len(games)))
-
-        # --> Flatten the list of lists
-        all_positions = list(itertools.chain.from_iterable(all_positions))
-        return all_positions
-
-    def load_games_into_lists(self, game_file, max_games=10000):
-        games = []
-        count = 0
-        bad_games = 0
-        with open(game_file) as pgn_file:
-            while True:
-                try:
-                    game = chess_pgn.read_game(pgn_file)
-                    if game is None:  # End of file
-                        break
-                    games.append(game)
-                    count += 1
-                    if count >= max_games:
-                        print('MAX GAMES REACHED')
-                        break
-                except ValueError as e:
-                    print('--> BAD GAME')
-                    bad_games += 1
-                    continue
-        print('Bad Games: ', bad_games)
-        return games
-
-    def parse_game(self, game):
+    def parse_all_game_positions(self, game):
         all_moves = [move for move in game.mainline_moves()]
         print('Game Moves: ', len(all_moves))
         if len(all_moves) == 0:
@@ -325,6 +229,37 @@ class PositionParser:
     ##################
     ### Deprecated ###
     ##################
+
+    def load_and_parse_games(self, game_file, max_games=10000):
+        games = self.load_games_into_lists(game_file, max_games=max_games)
+        with ThreadPoolExecutor(max_workers=64) as executor:
+            all_positions = list(tqdm(executor.map(self.parse_all_game_positions, games), total=len(games)))
+
+        # --> Flatten the list of lists
+        all_positions = list(itertools.chain.from_iterable(all_positions))
+        return all_positions
+
+    def load_games_into_lists(self, game_file, max_games=10000):
+        games = []
+        count = 0
+        bad_games = 0
+        with open(game_file) as pgn_file:
+            while True:
+                try:
+                    game = chess_pgn.read_game(pgn_file)
+                    if game is None:  # End of file
+                        break
+                    games.append(game)
+                    count += 1
+                    if count >= max_games:
+                        print('MAX GAMES REACHED')
+                        break
+                except ValueError as e:
+                    print('--> BAD GAME')
+                    bad_games += 1
+                    continue
+        print('Bad Games: ', bad_games)
+        return games
 
     def load_and_parse_middle_games(self, game_file, max_games=10000):
         def parse_game(game):
