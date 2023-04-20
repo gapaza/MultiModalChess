@@ -53,8 +53,8 @@ positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-
 #############################
 ##### Training Settings #####
 #############################
-train_dataset = 'train-dataset-1000000'
-val_dataset = 'val-dataset-1000000'
+train_dataset = 'train-dataset-2895k'
+val_dataset = 'val-dataset-2895k'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 64  # 32 64 128
@@ -106,6 +106,7 @@ tokenizer.set_vocabulary(vocab)
 vocab = tokenizer.get_vocabulary()
 vocab_size = len(vocab)
 mask_token_id = tokenizer(["[mask]"]).numpy()[0][0]
+padding_token_id = tokenizer([""]).numpy()[0][0]
 id2token = dict(enumerate(tokenizer.get_vocabulary()))
 token2id = {y: x for x, y in id2token.items()}
 
