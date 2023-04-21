@@ -15,16 +15,24 @@ tokens_dir = os.path.join(root_dir, 'tokens')
 
 
 
+
+################################
+##### Stockfish Data Files #####
+################################
+
+stockfish_data_dir = os.path.join(root_dir, 'evaluations')
+
+
 ########################################
 ##### Parsing Games Into Positions #####
 ########################################
 
 # --> Game File Input
 games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
-# games_file = os.path.join(root_dir, 'games', 'computer-training-games.pgn')
+# games_file = os.path.join(root_dir, 'games', 'computer', 'ccrl-40-15-elo-3400.pgn')
 
-# --> Save Positions Directory
-positions_save_dir = os.path.join(positions_dir, 'human-middlegames')
+# --> Game Directory Input
+games_file_dir = os.path.join(root_dir, 'games', 'human-training-games')
 
 
 
@@ -34,7 +42,15 @@ positions_save_dir = os.path.join(positions_dir, 'human-middlegames')
 ##### Parsing Positions Into Datasets #####
 ###########################################
 
-positions_load_dir = os.path.join(positions_dir, 'human-rand-games')
+
+
+eval_positions_dir = os.path.join(positions_dir, 'all-epds')
+
+positions_load_dir = os.path.join(positions_dir, 'human-training-games')
+# positions_load_dir = os.path.join(positions_dir, 'human-middlegames')
+
+
+
 
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-1000.pkl')
 # positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-10000.pkl')
@@ -53,8 +69,8 @@ positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-
 #############################
 ##### Training Settings #####
 #############################
-train_dataset = 'train-dataset-2895k'
-val_dataset = 'val-dataset-2895k'
+train_dataset = 'human-training-games-training-997k'
+val_dataset = 'human-training-games-validation-997k'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 64  # 32 64 128
@@ -62,11 +78,7 @@ seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file
 embed_dim = 256  # 512 too much
 encoder_dense_dim = 2048  # 2048
-encoder_heads = 48
-
-
-
-
+encoder_heads = 12
 
 
 
@@ -106,7 +118,7 @@ tokenizer.set_vocabulary(vocab)
 vocab = tokenizer.get_vocabulary()
 vocab_size = len(vocab)
 mask_token_id = tokenizer(["[mask]"]).numpy()[0][0]
-padding_token_id = tokenizer([""]).numpy()[0][0]
+padding_token_id = tokenizer(['']).numpy()[0][0]
 id2token = dict(enumerate(tokenizer.get_vocabulary()))
 token2id = {y: x for x, y in id2token.items()}
 

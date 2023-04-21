@@ -57,7 +57,6 @@ def test_engine():
     # Set the maximum number of games to process
     max_games = 1
 
-
     # Open the PGN file
     with open(config.games_file) as pgn_file:
         progress_bar = tqdm(range(max_games), desc="Processing games", unit="game")

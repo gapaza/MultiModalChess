@@ -42,9 +42,12 @@ def get_board_tensor_from_moves(move_tokens, move_idx):
     board = chess.Board()
     try:
         for i in range(move_idx+1):
-            board.push_uci(moves[i])
+            move = moves[i]
+            if move in ['[mask]', '']:
+                break
+            board.push_uci(move)
     except Exception as e:
-        print('--> INVALID MOVE')
+        print('--> INVALID MOVE', e)
     return BoardOperations.board_to_tensor(board)
 
 
@@ -78,8 +81,15 @@ def custom_preprocess(moves):
     rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
     mask_center = tf.gather(true_indices, rand_idx)
     mask_start = mask_center - 1
+    encoded_texts_cutoff = mask_start + 3
     mask_length = 3
     mask_indices = tf.range(mask_start, mask_start + mask_length)
+
+    # Set all tokens in encoded_text to config.paddding_token_id after cutoff
+    encoded_texts = tf.concat([
+        encoded_texts[:encoded_texts_cutoff],
+        config.padding_token_id * tf.ones_like(encoded_texts[encoded_texts_cutoff:])
+    ], axis=0)
 
     # 3.1 Get board tensor using tf.py_function to call get_board_tensor_from_moves
     board_tensor = tf.py_function(get_board_tensor_from_moves, [encoded_texts, mask_center], tf.int32)

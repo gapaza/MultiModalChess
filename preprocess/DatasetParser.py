@@ -26,61 +26,44 @@ class DatasetParser:
         # --> 2. Encode Moves and Extract Boards
         print('--> 2. Encode Moves and Extract Boards')
         self.all_moves = config.encode(self.all_positions.moves.values.tolist())
-        # self.all_next_moves = config.encode(self.all_positions.next_move.values.tolist())
-        # self.all_boards = self.all_positions.board.values.tolist()
 
         # --> 3. Split into Train and Validation
         print('--> 3. Split into Train and Validation')
         split_idx = int(len(self.all_moves) * 0.9)
         self.train_moves, self.validation_moves = self.all_moves[:split_idx],  self.all_moves[split_idx:]
-        # self.train_boards, self.validation_boards = self.all_boards[:split_idx], self.all_boards[split_idx:]
-        # self.train_next_move, self.validation_next_move = self.all_next_moves[:split_idx], self.all_next_moves[split_idx:]
 
         # --> 4. Preprocess Train and Validation Datasets
         print('--> 4. Preprocess Train and Validation Datasets')
-        # self.train_dataset = self.preprocess(self.train_moves, self.train_boards, self.get_masked_input_and_labels_tf)
-        # self.val_dataset = self.preprocess(self.validation_moves, self.validation_boards, self.get_masked_input_and_labels_tf)
-        #
-        # self.train_dataset = self.preprocess(self.train_moves, self.train_boards,
-        #                                      self.get_masked_seq_input_and_labels_tf)
-        # self.val_dataset = self.preprocess(self.validation_moves, self.validation_boards,
-        #                                    self.get_masked_seq_input_and_labels_tf)
-
-        self.train_dataset = self.preprocess_moves_only(self.train_moves,
-                                             self.pretraining_sequence_preprocessing_custom)
-        self.val_dataset = self.preprocess_moves_only(self.validation_moves,
-                                           self.pretraining_sequence_preprocessing_custom)
+        preprocess_func = self.pretraining_sequence_preprocessing_custom
+        self.train_dataset = self.preprocess(self.train_moves, preprocess_func)
+        self.val_dataset = self.preprocess(self.validation_moves, preprocess_func)
 
 
         # --> 5. Save Datasets
         print('--> 5. Save Datasets')
+        positions_load_dir_name = os.path.basename(config.positions_load_dir)
         num_positions = int(len(self.all_positions) / 1000)
-        num_positions = f"{num_positions}k"
-        train_path = os.path.join(config.datasets_dir, 'train-dataset-' + num_positions)
-        val_path = os.path.join(config.datasets_dir, 'val-dataset-' + num_positions)
+        num_positions = f"-{num_positions}k"
+        train_path = os.path.join(config.datasets_dir, positions_load_dir_name + '-training' + num_positions)
+        val_path = os.path.join(config.datasets_dir, positions_load_dir_name + '-validation' + num_positions)
         self.train_dataset.save(train_path)
         self.val_dataset.save(val_path)
         print('Train Dataset: ', train_path)
         print('Val Dataset: ', val_path)
 
-    def load_positions(self, positions_file):
-        print('Positions file: ', config.positions_file)
-        positions = []
-        with open(positions_file, 'rb') as f:
-            positions = pickle.load(f)
-        all_data = pd.DataFrame(positions)
-        all_data = self.prune_positions(all_data)
-        return all_data
 
-    def load_positions_dir(self, positions_dir):
+
+    def load_positions_dir(self, positions_dir, max_positions_thousands=10000):
         # Iterate and open all files in dir with pickle
         positions = []
-        for filename in os.listdir(positions_dir):
+        for idx, filename in enumerate(os.listdir(positions_dir)):
             print('--> Load Positions: ', filename)
             with open(os.path.join(positions_dir, filename), 'rb') as f:
                 positions += pickle.load(f)
             f.close()
-            # break
+            if len(positions) >= max_positions_thousands * 1000:
+                break
+        print('Total Positions: ', len(positions))
         all_data = pd.DataFrame(positions)
         all_data = self.prune_positions(all_data)
         return all_data
@@ -88,7 +71,8 @@ class DatasetParser:
     def prune_positions(self, all_data):
         # --> Conditions for dropping positions
         # 1. No moves exist
-        all_data = all_data[all_data['moves'] != '']
+        # all_data = all_data[all_data['moves'] != '']
+        all_data = all_data[all_data['moves'].apply(lambda x: len(x) >= 15)]
         all_data.reset_index(drop=True, inplace=True)
         return all_data
 
@@ -106,19 +90,10 @@ class DatasetParser:
                       |_|                                     
     """
 
-    def preprocess(self, moves, boards, preprocess_func):
-        buffer_size = len(moves)
-        print('buffer_size', buffer_size)
-        dataset = tf.data.Dataset.from_tensor_slices(
-            (moves, boards)
-        )
-        dataset = dataset.map(
-            preprocess_func, num_parallel_calls=tf.data.AUTOTUNE
-        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
-        return dataset
-
-    def preprocess_moves_only(self, encoded_moves, preprocess_func):
+    def preprocess(self, encoded_moves, preprocess_func):
         buffer_size = len(encoded_moves)
+        if buffer_size > 100000:
+            buffer_size = 100000
         print('buffer_size', buffer_size)
         dataset = tf.data.Dataset.from_tensor_slices(
             (encoded_moves)
@@ -127,6 +102,22 @@ class DatasetParser:
             preprocess_func, num_parallel_calls=tf.data.AUTOTUNE
         ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
         return dataset
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     ###########################
@@ -294,6 +285,7 @@ class DatasetParser:
         rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
         mask_start = tf.gather(true_indices, rand_idx)
         mask_length = 3
+        mask_length = tf.minimum(tf.cast(mask_length, dtype=tf.int64), 128 - mask_start)
         mask_indices = tf.range(mask_start, mask_start + mask_length)
 
         # 3. Set all entries in inp_mask to False except for the masked indices
@@ -396,23 +388,33 @@ class DatasetParser:
             [False],
             inp_mask[last_true_index[0] + 1:]
         ], axis=0)
+        sequence_end = last_true_index[0] - 2
+
+        # 1.1 Get board tensor using tf.py_function to call get_board_tensor_from_moves
+        board_tensor = tf.py_function(get_board_tensor_from_moves, [encoded_texts, sequence_end], tf.int64)
+        board_tensor.set_shape((8, 8, 12))
 
         # 2. Find center point where 3 tokens can be masked by a mask slide
         true_indices = tf.squeeze(tf.where(inp_mask), axis=1)
         rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
         mask_center = tf.gather(true_indices, rand_idx)
         mask_start = mask_center - 1
+        encoded_texts_cutoff = mask_start + 3
         mask_length = 3
         mask_indices = tf.range(mask_start, mask_start + mask_length)
+
+        # Set all tokens in encoded_text to config.padding_token_id after cutoff
+        # encoded_texts = tf.concat([
+        #     encoded_texts[:encoded_texts_cutoff],
+        #     config.padding_token_id * tf.ones_like(encoded_texts[mask_start + mask_length:])
+        # ], axis=0)
+        # encoded_texts.set_shape((128,))
 
         # 3. Set all entries in inp_mask to False except for the masked indices
         inp_mask = tf.zeros((128,), dtype=tf.bool)
         inp_mask = tf.scatter_nd(tf.expand_dims(mask_indices, 1), tf.ones_like(mask_indices, dtype=tf.bool),
                                  inp_mask.shape)
 
-        # 3.1 Get board tensor using tf.py_function to call get_board_tensor_from_moves
-        board_tensor = tf.py_function(get_board_tensor_from_moves, [encoded_texts, mask_center], tf.int64)
-        board_tensor.set_shape((8, 8, 12))
 
 
         # 4. Create labels for masked tokens
@@ -452,7 +454,10 @@ class DatasetParser:
         )
         dataset = dataset.map(
             self.get_masked_seq_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
-        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
+        ).shuffle(10000).prefetch(tf.data.AUTOTUNE)
+        # dataset = dataset.map(
+        #     self.get_masked_seq_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
+        # ).prefetch(tf.data.AUTOTUNE)
         return dataset
 
     def pretraining_preprocessing(self, moves, boards):
@@ -463,7 +468,10 @@ class DatasetParser:
         )
         dataset = dataset.map(
             self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
-        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
+        ).shuffle(10000).prefetch(tf.data.AUTOTUNE)
+        # dataset = dataset.map(
+        #     self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
+        # ).prefetch(tf.data.AUTOTUNE)
         return dataset
 
 
