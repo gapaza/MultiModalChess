@@ -4,6 +4,7 @@ from keras import layers
 from hydra.layers.MoveEmbedding import MoveEmbedding
 from hydra.layers.BoardEmbedding import BoardEmbedding
 from hydra.layers.ModalityFusion import ModalityFusion
+from hydra.layers.BoardAttention import BoardAttention
 from hydra.layers.Encoder import Encoder
 
 # --> Output Heads
@@ -23,7 +24,8 @@ class Hydra(layers.Layer):
         self.move_embedding = MoveEmbedding()
 
         # --> Board Embedding
-        self.board_embedding = BoardEmbedding()
+        # self.board_embedding = BoardEmbedding()
+        self.board_attention = BoardAttention()
 
         # --> Modality Fusion
         self.modality_fusion = ModalityFusion()
@@ -38,7 +40,7 @@ class Hydra(layers.Layer):
     def __call__(self, board_inputs, move_inputs, mask=None):
 
         # --> Board Embedding
-        board_embedding = self.board_embedding(board_inputs)
+        board_embedding = self.board_attention(board_inputs)
 
         # --> Move Embedding
         move_embedding = self.move_embedding(move_inputs)
