@@ -4,8 +4,6 @@ from hydra import config
 
 
 
-
-
 def get_board_tensor_at_move(move_tokens, move_idx):
     move_idx = move_idx.numpy()
     moves = [config.id2token[token_id] for token_id in move_tokens.numpy()]
@@ -34,8 +32,6 @@ def get_sequence_board_tensor(move_tokens):
             print('--> INVALID MOVE', e)
             break
     return board_to_tensor(board)
-
-
 
 def board_to_tensor(board):
     tensor = np.zeros((8, 8, 12))

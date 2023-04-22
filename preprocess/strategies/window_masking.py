@@ -1,15 +1,16 @@
 import tensorflow as tf
 from hydra import config
-
 from preprocess.strategies.tf_utils import get_move_masking_positions, \
         constrain_move_mask_window_positions, generate_random_mask_window, \
-        pad_existing_sequence_moves, apply_move_mask, generate_random_mask_window_long
+        pad_existing_sequence_moves, apply_move_mask, \
+        generate_random_mask_window_long
 from preprocess.strategies.py_utils import get_sequence_board_tensor, get_board_tensor_at_move
 
 
 
 def rand_window(encoded_texts):
         print('Custom Preprocess')
+        print('encoded_texts', encoded_texts.shape)
 
         # 1.1 Get y labels for mask prediction
         y_labels = tf.identity(encoded_texts)
@@ -44,9 +45,6 @@ def rand_window(encoded_texts):
 
         return encoded_texts_masked, y_labels, sample_weights, board_tensor
 
-
-
-
 def rand_window_rand_game_token(encoded_texts):
         print('Custom Preprocess')
 
@@ -65,6 +63,8 @@ def rand_window_rand_game_token(encoded_texts):
         maxval = tf.cast(maxval, tf.int64)
         seed = tf.constant([42, 42], dtype=tf.int32)
         random_board_idx = tf.random.stateless_uniform(shape=(), minval=minval, maxval=maxval, seed=seed, dtype=tf.int64)
+        # random_board_idx = tf.random.uniform(shape=(), minval=minval, maxval=maxval, dtype=tf.int64)
+
 
         # 4. Generate random mask
         # inp_mask_1 = generate_random_mask_window(tf.identity(inp_mask))

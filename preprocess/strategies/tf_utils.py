@@ -1,20 +1,20 @@
-# This file holds useful functions for real-time data preprocessing
-# All operations must be tensorflow operations
 import tensorflow as tf
 from hydra import config
 
+testing = False
+
+
 def get_move_masking_positions(tokenized_text):
-    seed = tf.constant([42, 42], dtype=tf.int32)
 
     # Set all possible positions to true
+    seed = tf.constant([42, 42], dtype=tf.int32)
     inp_mask = tf.random.stateless_uniform(tokenized_text.shape, seed=seed) <= 1.0
 
-    # tokens with id < 2 are special tokens and can't be masked
-    # thus, set all tokens with id < 2 to false
-    inp_mask = tf.logical_and(inp_mask, tokenized_text > 3)
+    # tokens with id < 3 are special tokens and can't be masked
+    # thus, set all tokens with id < 3 to false
+    inp_mask = tf.logical_and(inp_mask, tokenized_text > (config.num_special_tokens - 1))
 
     return inp_mask
-
 
 def constrain_move_mask_window_positions(inp_mask):
     true_indices = tf.where(inp_mask)
@@ -30,18 +30,18 @@ def constrain_move_mask_window_positions(inp_mask):
         [False],
         inp_mask[last_true_index[0] + 1:]
     ], axis=0)
-
     true_indices = tf.where(inp_mask)
     first_true_index = true_indices[0]
     last_true_index = true_indices[-1]
     return inp_mask, first_true_index, last_true_index
 
-
 def generate_random_mask_window(inp_mask):
-    seed = tf.constant([42, 42], dtype=tf.int32)
     true_indices = tf.squeeze(tf.where(inp_mask), axis=1)
+
+    seed = tf.constant([42, 42], dtype=tf.int32)
     rand_idx = tf.random.stateless_uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32, seed=seed)
     # rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
+
     mask_center = tf.gather(true_indices, rand_idx)
     mask_start = mask_center - 1
     mask_length = 3
@@ -52,9 +52,12 @@ def generate_random_mask_window(inp_mask):
     return inp_mask, mask_start, mask_center, mask_start + mask_length
 
 def generate_random_mask_window_long(inp_mask):
-    seed = tf.constant([42, 42], dtype=tf.int32)
     true_indices = tf.squeeze(tf.where(inp_mask), axis=1)
+
+    seed = tf.constant([42, 42], dtype=tf.int32)
     rand_idx = tf.random.stateless_uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32, seed=seed)
+    # rand_idx = tf.random.uniform(shape=[], maxval=tf.shape(true_indices)[0], dtype=tf.int32)
+
     mask_center = tf.gather(true_indices, rand_idx)
     mask_start = mask_center - 2
     mask_length = 5
@@ -71,7 +74,6 @@ def pad_existing_sequence_moves(tokenized_text, cutoff):
     ], axis=0)
     encoded_texts.set_shape((128,))
     return encoded_texts
-
 
 def apply_move_mask(tokenized_text, inp_mask):
     encoded_texts_masked = tf.identity(tokenized_text)

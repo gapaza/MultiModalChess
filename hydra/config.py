@@ -33,10 +33,9 @@ games_file = os.path.join(root_dir, 'games', 'chess-com-gm-games.pgn')
 # games_file = os.path.join(root_dir, 'games', 'computer', 'ccrl-40-15-elo-3400.pgn')
 
 # --> Game Directory Input
-games_file_dir = os.path.join(root_dir, 'games', 'chess-com-gm-games')
-
-
-
+# games_file_dir = os.path.join(root_dir, 'games', 'chess-com-gm-games')
+# games_file_dir = os.path.join(root_dir, 'games', 'ccrl-40-15-elo-3400')
+games_file_dir = os.path.join(root_dir, 'games', 'human-training-games')
 
 eval_positions_dir = os.path.join(positions_dir, 'all-epds')
 
@@ -49,7 +48,10 @@ eval_positions_dir = os.path.join(positions_dir, 'all-epds')
 ###########################################
 
 # positions_load_dir = os.path.join(positions_dir, 'chess-com-gm-games')
-positions_load_dir = os.path.join(positions_dir, 'human-training-games')
+# positions_load_dir = os.path.join(positions_dir, 'human-training-games')
+# positions_load_dir = os.path.join(positions_dir, 'ccrl-40-15-elo-3400-095247')
+positions_load_dir = os.path.join(positions_dir, 'human-training-games-095424')
+
 
 
 
@@ -126,6 +128,11 @@ token2id = {y: x for x, y in id2token.items()}
 def encode(input):
     encoded_input = tokenizer(input)
     return encoded_input.numpy()
+
+def encode_tf(input):
+    encoded_input = tokenizer(tf.expand_dims(input, axis=0))
+    encoded_input = tf.squeeze(encoded_input, axis=0)
+    return encoded_input
 
 
 print('--> FINISHED: config.py')

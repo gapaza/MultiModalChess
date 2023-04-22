@@ -23,17 +23,7 @@ from hydra import config
 import threading
 import multiprocessing
 multiprocessing.set_start_method('fork')
-
-
-import contextlib
-
-# Define a dummy file-like object that does nothing with its output
-class DummyFile:
-    def write(self, x):
-        pass
-
-
-
+import time
 
 
 
@@ -58,7 +48,8 @@ class PositionParser:
 
     def parse_dir_games(self, game_dir):
         game_files = os.listdir(game_dir)
-        game_dir_name = os.path.basename(os.path.normpath(game_dir))
+        time_stamp = time.strftime("%H%M%S")
+        game_dir_name = os.path.basename(os.path.normpath(game_dir)) + f"-{time_stamp}"
         save_dir = os.path.join(config.positions_dir, game_dir_name)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -66,7 +57,7 @@ class PositionParser:
         for game_file in game_files:
             game_file_path = os.path.join(game_dir, game_file)
             game_file_name = game_file.split('.')[0]
-            save_file = os.path.join(save_dir, game_file_name + '.pkl')
+            save_file = os.path.join(save_dir, game_file_name + '.txt')
             process = multiprocessing.Process(target=self.parse_games_linear, args=(game_file_path, save_file))
             process.start()
             process_list.append(process)
@@ -84,15 +75,18 @@ class PositionParser:
                     game = chess.pgn.read_game(pgn_file)
                     if game is None:  # End of file
                         break
-                    parsed_moves = self.parse_game_moves(game)
-                    # print(cnt, parsed_moves)
+                    parsed_moves = self.parse_game_moves_str(game)
+                    # parsed_moves = self.parse_game_moves(game)
                     if parsed_moves:
                         games.append(parsed_moves)
                         cnt += 1
                 except ValueError as e:
                     continue
-        with open(save_file, 'wb') as f:
-            pickle.dump(games, f)
+        # with open(save_file, 'wb') as f:
+        #     pickle.dump(games, f)
+        with open(save_file, 'w', encoding='utf-8') as f:
+            for line in games:
+                f.write(line + '\n')
         f.close()
         print('Finished parsing', game_file, 'to', save_file)
 
@@ -118,6 +112,12 @@ class PositionParser:
         else:
             return {'moves': moves}
 
+    def parse_game_moves_str(self, game):
+        moves = ' '.join(list(move.uci() for move in game.mainline_moves()))
+        if '@' in moves:
+            return None
+        else:
+            return moves
 
 
 if __name__ == '__main__':
