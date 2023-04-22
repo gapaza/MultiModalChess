@@ -11,11 +11,11 @@ class Encoder(layers.Layer):
         # --> Encoders
         self.encoder_stack = keras.Sequential([
             TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
-            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
-            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
-            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
-            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
-            # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
+            TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
             # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
             # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
             # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),

@@ -2,7 +2,7 @@ from keras import layers
 
 # --> Custom Layers
 from hydra.layers.MoveEmbedding import MoveEmbedding
-from hydra.layers.BoardEmbedding import BoardEmbedding
+from hydra.layers.BoardAttention import BoardAttention
 from hydra.layers.ModalityFusion import ModalityFusion
 from hydra.layers.Encoder import Encoder
 
@@ -23,7 +23,7 @@ class Hydra(layers.Layer):
         self.move_embedding = MoveEmbedding()
 
         # --> Board Embedding
-        self.board_embedding = BoardEmbedding()
+        self.board_embedding = BoardAttention()
 
         # --> Modality Fusion
         self.modality_fusion = ModalityFusion()
