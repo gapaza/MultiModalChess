@@ -50,7 +50,7 @@ eval_positions_dir = os.path.join(positions_dir, 'all-epds')
 # positions_load_dir = os.path.join(positions_dir, 'chess-com-gm-games')
 # positions_load_dir = os.path.join(positions_dir, 'human-training-games')
 # positions_load_dir = os.path.join(positions_dir, 'ccrl-40-15-elo-3400-095247')
-positions_load_dir = os.path.join(positions_dir, 'human-training-games-095424')
+positions_load_dir = os.path.join(positions_dir, 'human-training-games-141727')
 
 
 
@@ -59,6 +59,7 @@ positions_load_dir = os.path.join(positions_dir, 'human-training-games-095424')
 #############################
 ##### Training Settings #####
 #############################
+save_dataset = False
 train_dataset = 'human-training-games-training-299k'
 val_dataset = 'human-training-games-validation-299k'
 model_name = 'hydrachess'

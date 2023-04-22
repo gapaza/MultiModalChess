@@ -113,11 +113,12 @@ class PositionParser:
             return {'moves': moves}
 
     def parse_game_moves_str(self, game):
-        moves = ' '.join(list(move.uci() for move in game.mainline_moves()))
-        if '@' in moves:
+        move_list = list(move.uci() for move in game.mainline_moves())
+        move_str = ' '.join(move_list)
+        if '@' in move_str or len(move_list) < 5:
             return None
         else:
-            return moves
+            return move_str
 
 
 if __name__ == '__main__':

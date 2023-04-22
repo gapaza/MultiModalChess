@@ -47,12 +47,17 @@ class PlotCallback(tf.keras.callbacks.Callback):
         plt.show()
 
 
+from preprocess.DatasetGenerator import DatasetGenerator
 
 def train():
 
     # --> Load Datasets
-    training_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.train_dataset))
-    validation_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.val_dataset))
+    dataset_generator = DatasetGenerator()
+    training_dataset, validation_dataset = dataset_generator.get_datasets()
+    print('Finished loading datasets...')
+
+    # training_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.train_dataset))
+    # validation_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.val_dataset))
 
     training_dataset = training_dataset.batch(config.batch_size)
     validation_dataset = validation_dataset.batch(config.batch_size)

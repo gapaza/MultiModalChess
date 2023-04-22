@@ -10,7 +10,7 @@ from preprocess.strategies.py_utils import get_sequence_board_tensor, get_board_
 
 def rand_window(encoded_texts):
         print('Custom Preprocess')
-        print('encoded_texts', encoded_texts.shape)
+        print('encoded_texts', type(encoded_texts), encoded_texts)
 
         # 1.1 Get y labels for mask prediction
         y_labels = tf.identity(encoded_texts)
@@ -19,18 +19,18 @@ def rand_window(encoded_texts):
         inp_mask = get_move_masking_positions(encoded_texts)
 
         # 3. Constrain masking positions by disabling first and last move token
-        inp_mask, first_true_index, last_true_index = constrain_move_mask_window_positions(inp_mask)
-        inp_mask, first_true_index, last_true_index = constrain_move_mask_window_positions(inp_mask)
+        inp_mask = constrain_move_mask_window_positions(tf.identity(inp_mask))
 
         # 4. Generate random mask
         # inp_mask_1 = generate_random_mask_window(tf.identity(inp_mask))
         # inp_mask_2 = generate_random_mask_window(tf.identity(inp_mask))
         # inp_mask = tf.math.logical_or(inp_mask_1, inp_mask_2)
-        inp_mask, mask_start, mask_center, mask_end = generate_random_mask_window(tf.identity(inp_mask))
+        inp_mask, mask_start, mask_center, mask_end = generate_random_mask_window(inp_mask)
 
         # 5 Get board tensor using tf.py_function to call get_board_tensor_from_moves
         # board_tensor = tf.py_function(get_sequence_board_tensor, [encoded_texts], tf.int64)
         board_tensor = tf.py_function(get_board_tensor_at_move, [encoded_texts, mask_center], tf.int64)
+        board_tensor.set_shape((8, 8, 12))
 
         # 6. Create labels for masked tokens
         labels = -1 * tf.ones(encoded_texts.shape, dtype=tf.int64)
@@ -44,6 +44,12 @@ def rand_window(encoded_texts):
         sample_weights = tf.where(tf.equal(labels, -1), tf.zeros_like(labels), sample_weights)
 
         return encoded_texts_masked, y_labels, sample_weights, board_tensor
+
+
+
+
+
+
 
 def rand_window_rand_game_token(encoded_texts):
         print('Custom Preprocess')
