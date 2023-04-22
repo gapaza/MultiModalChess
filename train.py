@@ -59,8 +59,8 @@ def train():
     # training_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.train_dataset))
     # validation_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.val_dataset))
 
-    training_dataset = training_dataset.batch(config.batch_size)
-    validation_dataset = validation_dataset.batch(config.batch_size)
+    # training_dataset = training_dataset.batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
+    # validation_dataset = validation_dataset.batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
 
     # --> Create Model
     model = build_model()

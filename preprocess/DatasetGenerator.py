@@ -42,7 +42,7 @@ class DatasetGenerator:
             dataset = tf.data.TextLineDataset(file_path)
             dataset = dataset.map(config.encode_tf, num_parallel_calls=tf.data.AUTOTUNE)
             dataset = dataset.map(rand_window, num_parallel_calls=tf.data.AUTOTUNE)
-            return dataset.prefetch(tf.data.AUTOTUNE)
+            return dataset.shuffle(100).batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
 
         dataset = tf.data.Dataset.from_tensor_slices(move_files)
         dataset = dataset.interleave(
@@ -51,7 +51,8 @@ class DatasetGenerator:
             block_length=16,
             num_parallel_calls=tf.data.AUTOTUNE,
             deterministic=True
-        ).prefetch(tf.data.AUTOTUNE)
+        )
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)
         return dataset
 
     def get_datasets(self):

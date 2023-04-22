@@ -37,6 +37,7 @@ games_file = os.path.join(root_dir, 'games', 'chess-com-gm-games.pgn')
 # games_file_dir = os.path.join(root_dir, 'games', 'ccrl-40-15-elo-3400')
 games_file_dir = os.path.join(root_dir, 'games', 'human-training-games')
 
+# --> Eval Directory
 eval_positions_dir = os.path.join(positions_dir, 'all-epds')
 
 
