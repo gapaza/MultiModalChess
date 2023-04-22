@@ -29,13 +29,16 @@ stockfish_data_dir = os.path.join(root_dir, 'evaluations')
 ########################################
 
 # --> Game File Input
-games_file = os.path.join(root_dir, 'games', 'chess-com-gm-games.pgn')
+# games_file = os.path.join(root_dir, 'games', 'chess-com-gm-games.pgn')
+games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
 # games_file = os.path.join(root_dir, 'games', 'computer', 'ccrl-40-15-elo-3400.pgn')
 
 # --> Game Directory Input
 # games_file_dir = os.path.join(root_dir, 'games', 'chess-com-gm-games')
 # games_file_dir = os.path.join(root_dir, 'games', 'ccrl-40-15-elo-3400')
 games_file_dir = os.path.join(root_dir, 'games', 'human-training-games')
+games_file_dir = os.path.join(root_dir, 'games', 'human-training-games-san')
+
 
 # --> Eval Directory
 eval_positions_dir = os.path.join(positions_dir, 'all-epds')
@@ -93,8 +96,8 @@ import re
 
 
 def custom_standardization(input_data):
-    lowercase = tf.strings.lower(input_data)
-    stripped_html = tf.strings.regex_replace(lowercase, "<br />", " ")
+    # lowercase = tf.strings.lower(input_data)
+    stripped_html = tf.strings.regex_replace(input_data, "<br />", " ")
     return tf.strings.regex_replace(
         stripped_html, "[%s]" % re.escape("!#$%&'()*+,-./:;<=>?@\^_`{|}~"), ""
     )
@@ -141,5 +144,6 @@ print('--> FINISHED: config.py')
 
 # Commands
 # scp -i ~/keys/gabe-master.pem ./human-training-games-299k.zip ubuntu@3.17.77.24:/home/ubuntu/MultiModalChess/datasets
+# scp -i ~/keys/gabe-master.pem ubuntu@18.221.115.53:/home/ubuntu/MultiModalChess/positions/human-training-games-141727.zip .
 
 

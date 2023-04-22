@@ -49,7 +49,7 @@ class PositionParser:
     def parse_dir_games(self, game_dir):
         game_files = os.listdir(game_dir)
         time_stamp = time.strftime("%H%M%S")
-        game_dir_name = os.path.basename(os.path.normpath(game_dir)) + f"-{time_stamp}"
+        game_dir_name = os.path.basename(os.path.normpath(game_dir)) + f"-{time_stamp}-san"
         save_dir = os.path.join(config.positions_dir, game_dir_name)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -75,8 +75,8 @@ class PositionParser:
                     game = chess.pgn.read_game(pgn_file)
                     if game is None:  # End of file
                         break
-                    parsed_moves = self.parse_game_moves_str(game)
-                    # parsed_moves = self.parse_game_moves(game)
+                    # parsed_moves = self.parse_game_moves_uci(game)
+                    parsed_moves = self.parse_game_moves_san(game)
                     if parsed_moves:
                         games.append(parsed_moves)
                         cnt += 1
@@ -105,15 +105,20 @@ class PositionParser:
         1. The board tensor can be generated in the preprocessing step 
     """
 
-    def parse_game_moves(self, game):
-        moves = ' '.join(list(move.uci() for move in game.mainline_moves()))
-        if '@' in moves:
+    def parse_game_moves_uci(self, game):
+        move_list = list(move.uci() for move in game.mainline_moves())
+        move_str = ' '.join(move_list)
+        if '@' in move_str or len(move_list) < 5:
             return None
         else:
-            return {'moves': moves}
+            return move_str
 
-    def parse_game_moves_str(self, game):
-        move_list = list(move.uci() for move in game.mainline_moves())
+    def parse_game_moves_san(self, game):
+        move_list = []
+        board = chess.Board()
+        for move in game.mainline_moves():
+            move_list.append(board.san(move))
+            board.push(move)
         move_str = ' '.join(move_list)
         if '@' in move_str or len(move_list) < 5:
             return None

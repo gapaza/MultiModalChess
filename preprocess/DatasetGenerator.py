@@ -52,8 +52,7 @@ class DatasetGenerator:
             num_parallel_calls=tf.data.AUTOTUNE,
             deterministic=True
         )
-        dataset = dataset.prefetch(tf.data.AUTOTUNE)
-        return dataset
+        return dataset.prefetch(tf.data.AUTOTUNE)
 
     def get_datasets(self):
         return self.train_dataset, self.val_dataset
@@ -80,15 +79,20 @@ if __name__ == '__main__':
     dg = DatasetGenerator()
     train_dataset, val_dataset = dg.get_datasets()
     count = 0
-    for out1, out2, out3, out4 in train_dataset.take(1000):
+    print('\n\n -- TESTING -- \n\n')
+    print('train_dataset:', train_dataset)
+    print('train_dataset elements:', train_dataset.element_spec)
+
+    # _ParallelInterleaveDataset
+    # _PrefetchDataset
+
+    for out1, out2, out3, out4 in train_dataset.take(1):
         print('count:', count)
         count += 1
-        if count > 413:
-            break
         print('out1:', out1)
         print('out2:', out2)
         print('out3:', out3)
-        print('out4:', out4)
+        # print('out4:', out4)
 
 
 

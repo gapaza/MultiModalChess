@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 def split_pgn_file(large_pgn_file, max_games_per_file=100000):
     large_pgn_file_name = os.path.basename(large_pgn_file).split(".")[0]
+    large_pgn_file_name += "-san"
     output_dir = os.path.join(config.games_dir, large_pgn_file_name)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
