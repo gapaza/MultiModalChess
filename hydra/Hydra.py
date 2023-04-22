@@ -50,7 +50,7 @@ class Hydra(layers.Layer):
         encoder_outputs = self.encoder(encoder_inputs)
 
         # --> Output Heads
-        split_idx = 64
+        split_idx = 16
         encoder_board_output = encoder_outputs[:, :split_idx, :]
         encoder_move_output = encoder_outputs[:, split_idx:, :]
         output = []

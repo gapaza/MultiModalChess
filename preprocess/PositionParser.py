@@ -25,6 +25,20 @@ import multiprocessing
 multiprocessing.set_start_method('fork')
 
 
+import contextlib
+
+# Define a dummy file-like object that does nothing with its output
+class DummyFile:
+    def write(self, x):
+        pass
+
+
+
+
+
+
+
+
 class PositionParser:
 
     def __init__(self):
@@ -64,12 +78,17 @@ class PositionParser:
         games = []
         # Iterate over each game,
         with open(game_file) as pgn_file:
+            cnt = 0
             while True:
                 try:
                     game = chess.pgn.read_game(pgn_file)
                     if game is None:  # End of file
                         break
-                    games.append(self.parse_game_moves(game))
+                    parsed_moves = self.parse_game_moves(game)
+                    # print(cnt, parsed_moves)
+                    if parsed_moves:
+                        games.append(parsed_moves)
+                        cnt += 1
                 except ValueError as e:
                     continue
         with open(save_file, 'wb') as f:
@@ -93,7 +112,11 @@ class PositionParser:
     """
 
     def parse_game_moves(self, game):
-        return {'moves': ' '.join(list(move.uci() for move in game.mainline_moves()))}
+        moves = ' '.join(list(move.uci() for move in game.mainline_moves()))
+        if '@' in moves:
+            return None
+        else:
+            return {'moves': moves}
 
 
 

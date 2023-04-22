@@ -138,8 +138,6 @@ def test_data():
 
 if __name__ == '__main__':
 
-    # test_data()
-
     # open pgn file
     pgn_file = open(config.games_file)
 

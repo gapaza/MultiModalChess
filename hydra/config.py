@@ -11,9 +11,10 @@ datasets_dir = os.path.join(root_dir, 'datasets')
 models_dir = os.path.join(root_dir, 'models')
 positions_dir = os.path.join(root_dir, 'positions')
 games_dir = os.path.join(root_dir, 'games')
+chess_com_games_dir = os.path.join(games_dir, 'chess-com')
 tokens_dir = os.path.join(root_dir, 'tokens')
-
-
+checkpoints_dir = os.path.join(root_dir, 'checkpoints')
+board_attention_dir = os.path.join(root_dir, 'hydra', 'board_attention')
 
 
 ################################
@@ -28,11 +29,16 @@ stockfish_data_dir = os.path.join(root_dir, 'evaluations')
 ########################################
 
 # --> Game File Input
-games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
+games_file = os.path.join(root_dir, 'games', 'chess-com-gm-games.pgn')
 # games_file = os.path.join(root_dir, 'games', 'computer', 'ccrl-40-15-elo-3400.pgn')
 
 # --> Game Directory Input
-games_file_dir = os.path.join(root_dir, 'games', 'human-training-games')
+games_file_dir = os.path.join(root_dir, 'games', 'chess-com-gm-games')
+
+
+
+
+eval_positions_dir = os.path.join(positions_dir, 'all-epds')
 
 
 
@@ -42,26 +48,8 @@ games_file_dir = os.path.join(root_dir, 'games', 'human-training-games')
 ##### Parsing Positions Into Datasets #####
 ###########################################
 
-
-
-eval_positions_dir = os.path.join(positions_dir, 'all-epds')
-
+# positions_load_dir = os.path.join(positions_dir, 'chess-com-gm-games')
 positions_load_dir = os.path.join(positions_dir, 'human-training-games')
-# positions_load_dir = os.path.join(positions_dir, 'human-middlegames')
-
-
-
-
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-1000.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-10000.pkl')
-positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-100000.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-1000000.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-positions-3000000.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-627.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-6224.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-72753.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'human-training-positions-743847.pkl')
-# positions_file = os.path.join(root_dir, 'positions', 'computer-training-positions-1373003.pkl')
 
 
 
@@ -69,16 +57,24 @@ positions_file = os.path.join(root_dir, 'positions', 'human-training-middlegame-
 #############################
 ##### Training Settings #####
 #############################
-train_dataset = 'human-training-games-training-997k'
-val_dataset = 'human-training-games-validation-997k'
+train_dataset = 'human-training-games-training-299k'
+val_dataset = 'human-training-games-validation-299k'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 64  # 32 64 128
 seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file
-embed_dim = 256  # 512 too much
+embed_dim = 64  # 512 too much
 encoder_dense_dim = 2048  # 2048
-encoder_heads = 12
+encoder_heads = 48
+num_sparse_board = 3
+visual_transformer_layers = 4
+visual_transformer_heads = 12
+visual_transformer_units = [
+    embed_dim * 2,
+    embed_dim,
+]
+vanilla_viz_transformer = False
 
 
 
@@ -100,11 +96,15 @@ def custom_standardization(input_data):
     )
 
 
-special_tokens=["[mask]"]
-vocab_file = os.path.join(root_dir, 'tokens', 'tokens_1966.pkl')
+special_tokens = ["[pos]", "[mask]"]
+num_special_tokens = len(special_tokens) + 2
+vocab_file = os.path.join(root_dir, 'tokens', 'tokens_1966.pkl')  # tokens_1966.pkl, tokens_1968_chesscom
 vocab = []
 with open(vocab_file, 'rb') as f:
     vocab = list(pickle.load(f))
+    # remove empty string and [UNK]
+    if '' in vocab:
+        vocab.remove('')
     vocab.sort()
 vocab = special_tokens + vocab
 vocab_size = len(vocab)
@@ -119,6 +119,7 @@ vocab = tokenizer.get_vocabulary()
 vocab_size = len(vocab)
 mask_token_id = tokenizer(["[mask]"]).numpy()[0][0]
 padding_token_id = tokenizer(['']).numpy()[0][0]
+pos_token_id = tokenizer(["[pos]"]).numpy()[0][0]
 id2token = dict(enumerate(tokenizer.get_vocabulary()))
 token2id = {y: x for x, y in id2token.items()}
 
@@ -127,6 +128,9 @@ def encode(input):
     return encoded_input.numpy()
 
 
-
-
 print('--> FINISHED: config.py')
+
+# Commands
+# scp -i ~/keys/gabe-master.pem ./human-training-games-299k.zip ubuntu@3.17.77.24:/home/ubuntu/MultiModalChess/datasets
+
+

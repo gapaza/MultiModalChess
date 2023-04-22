@@ -9,8 +9,19 @@ import shutil
 
 from testing import get_board_tensor_from_moves
 
+
+from preprocess.strategies.window_masking import rand_window
+
+
+
+
+
+
+
 from hydra import config
 import sys
+
+
 
 class DatasetParser:
 
@@ -34,9 +45,8 @@ class DatasetParser:
 
         # --> 4. Preprocess Train and Validation Datasets
         print('--> 4. Preprocess Train and Validation Datasets')
-        preprocess_func = self.pretraining_sequence_preprocessing_custom
-        self.train_dataset = self.preprocess(self.train_moves, preprocess_func)
-        self.val_dataset = self.preprocess(self.validation_moves, preprocess_func)
+        self.train_dataset = self.preprocess(self.train_moves, rand_window)
+        self.val_dataset = self.preprocess(self.validation_moves, rand_window)
 
 
         # --> 5. Save Datasets
@@ -47,11 +57,21 @@ class DatasetParser:
         train_path = os.path.join(config.datasets_dir, positions_load_dir_name + '-training' + num_positions)
         val_path = os.path.join(config.datasets_dir, positions_load_dir_name + '-validation' + num_positions)
         self.train_dataset.save(train_path)
-        self.val_dataset.save(val_path)
         print('Train Dataset: ', train_path)
+        self.val_dataset.save(val_path)
         print('Val Dataset: ', val_path)
 
 
+
+    """
+     _                        _   _____             _  _    _                    
+    | |                      | | |  __ \           (_)| |  (_)                   
+    | |      ___    __ _   __| | | |__) |___   ___  _ | |_  _   ___   _ __   ___ 
+    | |     / _ \  / _` | / _` | |  ___// _ \ / __|| || __|| | / _ \ | '_ \ / __|
+    | |____| (_) || (_| || (_| | | |   | (_) |\__ \| || |_ | || (_) || | | |\__ \
+    |______|\___/  \__,_| \__,_| |_|    \___/ |___/|_| \__||_| \___/ |_| |_||___/
+                                                                                      
+    """
 
     def load_positions_dir(self, positions_dir, max_positions_thousands=10000):
         # Iterate and open all files in dir with pickle
@@ -72,7 +92,7 @@ class DatasetParser:
         # --> Conditions for dropping positions
         # 1. No moves exist
         # all_data = all_data[all_data['moves'] != '']
-        all_data = all_data[all_data['moves'].apply(lambda x: len(x) >= 15)]
+        all_data = all_data[all_data['moves'].apply(lambda x: len(x) >= 30)]
         all_data.reset_index(drop=True, inplace=True)
         return all_data
 
@@ -91,30 +111,14 @@ class DatasetParser:
     """
 
     def preprocess(self, encoded_moves, preprocess_func):
-        buffer_size = len(encoded_moves)
-        if buffer_size > 100000:
-            buffer_size = 100000
-        print('buffer_size', buffer_size)
+        full_buffer = len(encoded_moves)
         dataset = tf.data.Dataset.from_tensor_slices(
             (encoded_moves)
         )
         dataset = dataset.map(
             preprocess_func, num_parallel_calls=tf.data.AUTOTUNE
-        ).shuffle(buffer_size).prefetch(tf.data.AUTOTUNE)
+        ).shuffle(1000000).prefetch(tf.data.AUTOTUNE)
         return dataset
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -123,7 +127,6 @@ class DatasetParser:
     ###########################
     ### Pretraining Dataset ###
     ###########################
-
 
     def get_masked_input_and_labels(self, inputs, boards):
 
@@ -232,7 +235,6 @@ class DatasetParser:
     ### Pretraining Sequence Dataset ###
     ####################################
 
-
     def get_masked_seq_input_and_labels(self, inputs, boards):
 
         # encoded_texts: shape(N, 128) where 128 is the max sequence length
@@ -310,6 +312,9 @@ class DatasetParser:
         y_labels = tf.identity(encoded_texts)
 
         return encoded_texts_masked, y_labels, sample_weights, board
+
+
+
 
     ######################################################
     ### Pretraining Position Targeted Sequence Dataset ###
@@ -440,41 +445,6 @@ class DatasetParser:
         # print('Board: ', board)
 
         return encoded_texts_masked, y_labels, sample_weights, board_tensor
-
-
-    ##################
-    ### Deprecated ###
-    ##################
-
-    def pretraining_sequence_preprocessing(self, moves, boards):
-        buffer_size = len(moves)
-        print('buffer_size', buffer_size)
-        dataset = tf.data.Dataset.from_tensor_slices(
-            (moves, boards)
-        )
-        dataset = dataset.map(
-            self.get_masked_seq_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
-        ).shuffle(10000).prefetch(tf.data.AUTOTUNE)
-        # dataset = dataset.map(
-        #     self.get_masked_seq_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
-        # ).prefetch(tf.data.AUTOTUNE)
-        return dataset
-
-    def pretraining_preprocessing(self, moves, boards):
-        buffer_size = len(moves)
-        print('buffer_size', buffer_size)
-        dataset = tf.data.Dataset.from_tensor_slices(
-            (moves, boards)
-        )
-        dataset = dataset.map(
-            self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
-        ).shuffle(10000).prefetch(tf.data.AUTOTUNE)
-        # dataset = dataset.map(
-        #     self.get_masked_input_and_labels_tf, num_parallel_calls=tf.data.AUTOTUNE
-        # ).prefetch(tf.data.AUTOTUNE)
-        return dataset
-
-
 
 
 if __name__ == '__main__':
