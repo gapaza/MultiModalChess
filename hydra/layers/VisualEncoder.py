@@ -31,7 +31,7 @@ class VisualEncoder(layers.Layer):
 
     def __call__(self, inputs):
         encoded_patches = inputs
-        for _ in range(config.vt_layers):
+        for _ in range(config.vt_passes):
             x1 = self.norm_1(encoded_patches)
 
             attention_output = self.attn_lsa(x1, x1)

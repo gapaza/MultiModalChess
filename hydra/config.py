@@ -83,7 +83,7 @@ vt_img_size = 8
 vt_patch_size = 2
 vt_num_patches = (vt_img_size // vt_patch_size) ** 2
 vt_epsilon = 1e-6
-vt_layers = 4
+vt_passes = 4
 vt_heads = 48
 
 

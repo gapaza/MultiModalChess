@@ -42,7 +42,7 @@ class BoardAttention(layers.Layer):
         encoded_patches = self.patch_encoder(tokens)
 
         # Transformer
-        for _ in range(config.vt_layers):
+        for _ in range(config.vt_passes):
             x1 = self.norm_1(encoded_patches)
             attention_output = self.attn_lsa(x1, x1)
             x2 = self.add_1([attention_output, encoded_patches])

@@ -40,6 +40,7 @@ class Hydra(layers.Layer):
         # --> Encoders
         self.encoder = Encoder()
         self.visual_encoder = VisualEncoder()
+        # self.visual_encoder_2 = VisualEncoder()
 
         # --> Output Heads
         self.move_prediction_head = MovePrediction()
@@ -61,6 +62,7 @@ class Hydra(layers.Layer):
 
         # 5. Visual Encoder
         encoder_outputs = self.visual_encoder(combined_positional_embedding)
+        # encoder_outputs = self.visual_encoder_2(encoder_outputs)
 
         # 6. Output Heads
         split_idx = config.vt_num_patches

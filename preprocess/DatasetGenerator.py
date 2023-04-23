@@ -28,10 +28,10 @@ class DatasetGenerator:
         print('Val Move Files:', val_move_files)
 
         # 3. Parse move files
-        # self.train_dataset = self.parse_dataset(train_move_files)
-        # self.val_dataset = self.parse_dataset(val_move_files)
-        self.train_dataset = self.parse_dataset_memory(train_move_files)
-        self.val_dataset = self.parse_dataset_memory(val_move_files)
+        self.train_dataset = self.parse_dataset(train_move_files)
+        self.val_dataset = self.parse_dataset(val_move_files)
+        # self.train_dataset = self.parse_dataset_memory(train_move_files)
+        # self.val_dataset = self.parse_dataset_memory(val_move_files)
 
         # 4. Save dataset
         if config.save_dataset:
@@ -50,7 +50,7 @@ class DatasetGenerator:
             dataset = dataset.batch(config.batch_size)
             dataset = dataset.map(config.encode_tf_batch, num_parallel_calls=tf.data.AUTOTUNE)
             dataset = dataset.map(rand_window_batch, num_parallel_calls=tf.data.AUTOTUNE)
-            dataset = dataset.shuffle(10)
+            dataset = dataset.shuffle(3125)
             return dataset.prefetch(tf.data.AUTOTUNE)
 
         dataset = tf.data.Dataset.from_tensor_slices(move_files)
