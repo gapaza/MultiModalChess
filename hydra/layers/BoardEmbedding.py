@@ -25,9 +25,14 @@ class BoardEmbedding(layers.Layer):
         # - these tensors are concatenated to the original board tensor along the last dimension
         # - input shape: (batch, 8, 8, 12)
         # - output shape: (batch, 8, 8, 60)
+        # - output shape2: (batch, 8, 8, 108) ~ with 4 additional shifts
         images = tf.concat(
             [
                 images,
+                # self.crop_shift_pad(images, mode="up"),
+                # self.crop_shift_pad(images, mode="left"),
+                # self.crop_shift_pad(images, mode="right"),
+                # self.crop_shift_pad(images, mode="down"),
                 self.crop_shift_pad(images, mode="left-up"),
                 self.crop_shift_pad(images, mode="left-down"),
                 self.crop_shift_pad(images, mode="right-up"),
@@ -66,7 +71,27 @@ class BoardEmbedding(layers.Layer):
 
     def crop_shift_pad(self, images, mode):
         # Build the diagonally shifted images
-        if mode == "left-up":
+        if mode == "left":
+            crop_height = 0
+            crop_width = self.half_patch
+            shift_height = 0
+            shift_width = 0
+        elif mode == "up":
+            crop_height = self.half_patch
+            crop_width = 0
+            shift_height = 0
+            shift_width = 0
+        elif mode == "right":
+            crop_height = 0
+            crop_width = 0
+            shift_height = 0
+            shift_width = self.half_patch
+        elif mode == "down":
+            crop_height = 0
+            crop_width = 0
+            shift_height = self.half_patch
+            shift_width = 0
+        elif mode == "left-up":
             crop_height = self.half_patch
             crop_width = self.half_patch
             shift_height = 0
