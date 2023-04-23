@@ -1,4 +1,4 @@
-from hydra.models.HydraMLM import HydraMLM
+from hydra.HydraMLM import HydraMLM
 from hydra.Hydra import Hydra
 from keras import layers
 import keras
