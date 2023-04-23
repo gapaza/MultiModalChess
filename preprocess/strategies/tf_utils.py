@@ -16,6 +16,20 @@ def get_move_masking_positions(tokenized_text):
 
     return inp_mask
 
+def get_move_masking_positions_batch(tokenized_text):
+    # Get the batch size
+    batch_size = tf.shape(tokenized_text)[0]
+
+    # Set all possible positions to true
+    seed = tf.constant([42, 42], dtype=tf.int32)
+    inp_mask = tf.random.stateless_uniform(tf.shape(tokenized_text), seed=seed) <= 1.0
+
+    # Tokens with id < 3 are special tokens and can't be masked
+    # Thus, set all tokens with id < 3 to false
+    inp_mask = tf.logical_and(inp_mask, tokenized_text > (config.num_special_tokens - 1))
+
+    return inp_mask
+
 def constrain_move_mask_window_positions(inp_mask):
     true_indices = tf.where(inp_mask)
     first_true_index = true_indices[0]
@@ -32,6 +46,15 @@ def constrain_move_mask_window_positions(inp_mask):
     ], axis=0)
     inp_mask.set_shape((config.seq_length,))
     return inp_mask
+
+
+def constrain_move_mask_window_positions_batch(inp_mask):
+    true_indices = tf.where(inp_mask)
+    first_true_index = true_indices[:, 0]
+    return true_indices, first_true_index
+
+
+
 
 def generate_random_mask_window(inp_mask):
     print('inp_mask', inp_mask)

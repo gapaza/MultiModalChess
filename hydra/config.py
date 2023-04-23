@@ -68,7 +68,7 @@ train_dataset = 'human-training-games-training-299k'
 val_dataset = 'human-training-games-validation-299k'
 model_name = 'hydrachess'
 epochs = 30
-batch_size = 64  # 32 64 128
+batch_size = 32  # 32 64 128
 seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file
 embed_dim = 64  # 512 too much
@@ -137,6 +137,10 @@ def encode(input):
 def encode_tf(input):
     encoded_input = tokenizer(tf.expand_dims(input, axis=0))
     encoded_input = tf.squeeze(encoded_input, axis=0)
+    return encoded_input
+
+def encode_tf_batch(input):
+    encoded_input = tokenizer(input)
     return encoded_input
 
 

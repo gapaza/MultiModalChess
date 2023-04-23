@@ -5,7 +5,7 @@ import os
 import pickle
 import time
 from hydra import config
-from preprocess.strategies.window_masking import rand_window
+from preprocess.strategies.window_masking import rand_window, rand_window_batch
 
 class DatasetGenerator:
 
@@ -40,9 +40,17 @@ class DatasetGenerator:
     def parse_dataset(self, move_files):
         def parse_fn(file_path):
             dataset = tf.data.TextLineDataset(file_path)
-            dataset = dataset.map(config.encode_tf, num_parallel_calls=tf.data.AUTOTUNE)
-            dataset = dataset.map(rand_window, num_parallel_calls=tf.data.AUTOTUNE)
-            return dataset.shuffle(100).batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
+
+            # Normal Config
+            # dataset = dataset.map(config.encode_tf, num_parallel_calls=tf.data.AUTOTUNE)
+            # dataset = dataset.map(rand_window, num_parallel_calls=tf.data.AUTOTUNE)
+
+            # Early Batching
+            dataset = dataset.batch(config.batch_size)
+            dataset = dataset.map(config.encode_tf_batch, num_parallel_calls=tf.data.AUTOTUNE)
+            dataset = dataset.map(rand_window_batch, num_parallel_calls=tf.data.AUTOTUNE)
+            dataset = dataset.shuffle(100)
+            return dataset.prefetch(tf.data.AUTOTUNE)
 
         dataset = tf.data.Dataset.from_tensor_slices(move_files)
         dataset = dataset.interleave(
@@ -52,7 +60,12 @@ class DatasetGenerator:
             num_parallel_calls=tf.data.AUTOTUNE,
             deterministic=True
         )
+
+        # Late Batching
+        # dataset = dataset.batch(config.batch_size)
         return dataset.prefetch(tf.data.AUTOTUNE)
+
+
 
     def get_datasets(self):
         return self.train_dataset, self.val_dataset
@@ -83,16 +96,15 @@ if __name__ == '__main__':
     print('train_dataset:', train_dataset)
     print('train_dataset elements:', train_dataset.element_spec)
 
+
+
+
     # _ParallelInterleaveDataset
     # _PrefetchDataset
-
-    for out1, out2, out3, out4 in train_dataset.take(1):
+    for out1 in train_dataset.take(1):
         print('count:', count)
         count += 1
         print('out1:', out1)
-        print('out2:', out2)
-        print('out3:', out3)
-        # print('out4:', out4)
 
 
 

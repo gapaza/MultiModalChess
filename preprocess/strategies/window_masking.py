@@ -3,9 +3,25 @@ from hydra import config
 from preprocess.strategies.tf_utils import get_move_masking_positions, \
         constrain_move_mask_window_positions, generate_random_mask_window, \
         pad_existing_sequence_moves, apply_move_mask, \
-        generate_random_mask_window_long
+        generate_random_mask_window_long, get_move_masking_positions_batch, constrain_move_mask_window_positions_batch
 from preprocess.strategies.py_utils import get_sequence_board_tensor, get_board_tensor_at_move
 
+
+
+
+def rand_window_batch(encoded_texts):
+        output_batch = tf.map_fn(
+                rand_window,  # The function to apply to each element in the batch
+                encoded_texts,  # The input tensor with shape (None, 128)
+                fn_output_signature = (
+                    tf.TensorSpec(shape=(128,), dtype=tf.int64),  # encoded_texts_masked
+                    tf.TensorSpec(shape=(128,), dtype=tf.int64),  # y_labels
+                    tf.TensorSpec(shape=(128,), dtype=tf.int64),  # sample_weights
+                    tf.TensorSpec(shape=(8, 8, 12), dtype=tf.int64),  # board_tensor
+                )
+                # The expected output shape and data type
+        )
+        return output_batch
 
 
 def rand_window(encoded_texts):
