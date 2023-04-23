@@ -6,7 +6,7 @@ from hydra import config
 
 class MoveEmbedding(layers.Layer):
 
-    def __init__(self):
+    def __init__(self, positional=True):
         super(MoveEmbedding, self).__init__()
 
         # --> Token Embeddings
@@ -15,6 +15,7 @@ class MoveEmbedding(layers.Layer):
         )
 
         # --> Position Embeddings
+        self.positional = positional
         self.token_position_embeddings = layers.Embedding(
             input_dim=config.seq_length,
             output_dim=config.embed_dim,
@@ -24,6 +25,8 @@ class MoveEmbedding(layers.Layer):
 
     def __call__(self, inputs):
         token_embeddings = self.token_embeddings(inputs)
+        if not self.positional:
+            return token_embeddings
         token_position_embeddings = self.token_position_embeddings(tf.range(start=0, limit=config.seq_length, delta=1))
         move_embedding = token_embeddings + token_position_embeddings
         return move_embedding

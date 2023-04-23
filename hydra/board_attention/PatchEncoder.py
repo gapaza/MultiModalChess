@@ -9,11 +9,11 @@ class PatchEncoder(layers.Layer):
 
         # --> Position Embeddings
         self.position_embedding = layers.Embedding(
-            input_dim=config.visual_transformer_num_patches, output_dim=config.embed_dim
+            input_dim=config.vt_num_patches, output_dim=config.embed_dim
         )
 
     def __call__(self, encoded_patches):
-        positions = tf.range(start=0, limit=config.visual_transformer_num_patches, delta=1)
+        positions = tf.range(start=0, limit=config.vt_num_patches, delta=1)
         encoded_positions = self.position_embedding(positions)
         encoded_patches = encoded_patches + encoded_positions
         return encoded_patches

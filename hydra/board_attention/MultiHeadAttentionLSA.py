@@ -3,23 +3,15 @@ import tensorflow as tf
 from hydra import config
 import math
 
-# AUGMENTATION
-IMAGE_SIZE = 8
-PATCH_SIZE = 2
-NUM_PATCHES = (IMAGE_SIZE // PATCH_SIZE) ** 2
-
-# ARCHITECTURE
-LAYER_NORM_EPS = 1e-6
-PROJECTION_DIM = 64
-
 
 
 class MultiHeadAttentionLSA(tf.keras.layers.MultiHeadAttention):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.total_length = config.vt_num_patches + config.seq_length
 
         # Diagonal Attention Mask
-        self.diag_attn_mask = 1 - tf.eye(config.visual_transformer_num_patches)
+        self.diag_attn_mask = 1 - tf.eye(self.total_length)
         self.diag_attn_mask = tf.cast([self.diag_attn_mask], dtype=tf.int8)
 
         # Learnable Temperature Scaling

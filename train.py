@@ -56,12 +56,6 @@ def train():
     training_dataset, validation_dataset = dataset_generator.get_datasets()
     print('Finished loading datasets...')
 
-    # training_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.train_dataset))
-    # validation_dataset = tf.data.Dataset.load(os.path.join(config.datasets_dir, config.val_dataset))
-
-    # training_dataset = training_dataset.batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
-    # validation_dataset = validation_dataset.batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
-
     # --> Create Model
     model = build_model()
 
@@ -70,7 +64,7 @@ def train():
     checkpoint = ModelCheckpoint(model_file, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
     plot_checkpoint = PlotCallback("hydra-mlm")
     history = model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset, callbacks=[checkpoint, plot_checkpoint])
-    print(history)
+
     # --> Plot Training History
     plt.figure(figsize=(10, 6))
     plt.plot(history.history['accuracy'], label='Training Accuracy')
@@ -90,7 +84,8 @@ def build_model():
 
     # --> Hydra Encoder
     hydra = Hydra()
-    output = hydra(board_inputs, move_inputs)
+    # output = hydra(board_inputs, move_inputs)
+    output = hydra.call2(board_inputs, move_inputs)
 
     # --> Hydra Model
     model = HydraMLM([board_inputs, move_inputs], output, name="hydra_mlm")

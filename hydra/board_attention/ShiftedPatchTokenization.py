@@ -9,12 +9,12 @@ from hydra import config
 class ShiftedPatchTokenization(layers.Layer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.image_size = config.visual_transformer_img_size
-        self.patch_size = config.visual_transformer_patch_size
+        self.image_size = config.vt_img_size
+        self.patch_size = config.vt_patch_size
         self.half_patch = self.patch_size // 2
-        self.flatten_patches = layers.Reshape((config.visual_transformer_num_patches, -1))
+        self.flatten_patches = layers.Reshape((config.vt_num_patches, -1))
         self.projection = layers.Dense(units=config.embed_dim)
-        self.layer_norm = layers.LayerNormalization(epsilon=config.visual_transformer_epsilon)
+        self.layer_norm = layers.LayerNormalization(epsilon=config.vt_epsilon)
 
 
     def __call__(self, images):
