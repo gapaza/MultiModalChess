@@ -78,13 +78,13 @@ encoder_heads = 48
 num_sparse_board = 3
 
 
-vt_dense_dim = 2048
+vt_dense_dim = 1024
 vt_img_size = 8
 vt_patch_size = 2
 vt_num_patches = (vt_img_size // vt_patch_size) ** 2
 vt_epsilon = 1e-6
 vt_layers = 4
-vt_heads = 12
+vt_heads = 48
 
 
 

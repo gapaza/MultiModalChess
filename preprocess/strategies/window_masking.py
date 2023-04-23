@@ -35,7 +35,7 @@ def rand_window(encoded_texts):
         inp_mask = get_move_masking_positions(encoded_texts)
 
         # 3. Constrain masking positions by disabling first and last move token
-        inp_mask = constrain_move_mask_window_positions(tf.identity(inp_mask))
+        inp_mask = constrain_move_mask_window_positions(inp_mask)
 
         # 4. Generate random mask
         # inp_mask_1 = generate_random_mask_window(tf.identity(inp_mask))

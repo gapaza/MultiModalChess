@@ -51,9 +51,17 @@ from preprocess.DatasetGenerator import DatasetGenerator
 
 def train():
 
-    # --> Load Datasets
+    #####################
+    ### Load Datasets ###
+    #####################
     dataset_generator = DatasetGenerator()
+
+    # --> Interleave Datasets
     training_dataset, validation_dataset = dataset_generator.get_datasets()
+
+    # --> Load Datasets
+    # training_dataset, validation_dataset = dataset_generator.load_datasets()
+
     print('Finished loading datasets...')
 
     # --> Create Model
@@ -84,8 +92,8 @@ def build_model():
 
     # --> Hydra Encoder
     hydra = Hydra()
-    # output = hydra(board_inputs, move_inputs)
-    output = hydra.call2(board_inputs, move_inputs)
+    # output = hydra.call_old(board_inputs, move_inputs)
+    output = hydra(board_inputs, move_inputs)
 
     # --> Hydra Model
     model = HydraMLM([board_inputs, move_inputs], output, name="hydra_mlm")

@@ -47,31 +47,6 @@ class Hydra(layers.Layer):
 
     def __call__(self, board_inputs, move_inputs, mask=None):
 
-        # --> Board Embedding
-        board_embedding = self.board_attention(board_inputs)
-
-        # --> Move Embedding
-        move_embedding = self.move_embedding(move_inputs)
-
-        # --> Combine Board and Move Embeddings
-        encoder_inputs = self.modality_fusion(board_embedding, move_embedding)
-
-        # --> Encoder Stack
-        encoder_outputs = self.encoder(encoder_inputs)
-
-        # --> Output Heads
-        split_idx = config.vt_num_patches
-        encoder_board_output = encoder_outputs[:, :split_idx, :]
-        encoder_move_output = encoder_outputs[:, split_idx:, :]
-        output = []
-        if self.mode == 'pretrain':
-            output = self.move_mask_prediction_head(encoder_move_output)
-        elif self.mode == 'predict':
-            output = self.move_prediction_head(encoder_outputs)
-        return output
-
-    def call2(self, board_inputs, move_inputs, mask=None):
-
         # 1. Move Embedding
         move_embedding = self.move_embedding(move_inputs)
 
@@ -98,8 +73,30 @@ class Hydra(layers.Layer):
             output = self.move_prediction_head(encoder_outputs)
         return output
 
+    def call_old(self, board_inputs, move_inputs, mask=None):
 
+        # --> Board Embedding
+        board_embedding = self.board_attention(board_inputs)
 
+        # --> Move Embedding
+        move_embedding = self.move_embedding(move_inputs)
+
+        # --> Combine Board and Move Embeddings
+        encoder_inputs = self.modality_fusion(board_embedding, move_embedding)
+
+        # --> Encoder Stack
+        encoder_outputs = self.encoder(encoder_inputs)
+
+        # --> Output Heads
+        split_idx = config.vt_num_patches
+        encoder_board_output = encoder_outputs[:, :split_idx, :]
+        encoder_move_output = encoder_outputs[:, split_idx:, :]
+        output = []
+        if self.mode == 'pretrain':
+            output = self.move_mask_prediction_head(encoder_move_output)
+        elif self.mode == 'predict':
+            output = self.move_prediction_head(encoder_outputs)
+        return output
 
 
 
