@@ -12,7 +12,8 @@ class BoardEmbedding(layers.Layer):
 
         self.image_size = config.vt_img_size
         self.patch_size = config.vt_patch_size
-        self.half_patch = self.patch_size // 2
+        # self.half_patch = self.patch_size // 2
+        self.half_patch = 1
         self.flatten_patches = layers.Reshape((config.vt_num_patches, -1))
         self.projection = layers.Dense(units=config.embed_dim)
         self.layer_norm = layers.LayerNormalization(epsilon=config.vt_epsilon)
