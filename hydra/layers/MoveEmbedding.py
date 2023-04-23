@@ -9,7 +9,6 @@ class MoveEmbedding(layers.Layer):
     def __init__(self):
         super(MoveEmbedding, self).__init__()
 
-
         # --> Token Embeddings
         self.token_embeddings = layers.Embedding(
             config.vocab_size, config.embed_dim, name="word_embedding"
@@ -23,14 +22,11 @@ class MoveEmbedding(layers.Layer):
             name="position_embedding",
         )
 
-
     def __call__(self, inputs):
         token_embeddings = self.token_embeddings(inputs)
         token_position_embeddings = self.token_position_embeddings(tf.range(start=0, limit=config.seq_length, delta=1))
         move_embedding = token_embeddings + token_position_embeddings
         return move_embedding
-
-
 
     def get_pos_encoding_matrix(self, max_len, d_emb):
         pos_enc = np.array(

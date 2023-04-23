@@ -49,20 +49,18 @@ class DatasetGenerator:
             dataset = dataset.batch(config.batch_size)
             dataset = dataset.map(config.encode_tf_batch, num_parallel_calls=tf.data.AUTOTUNE)
             dataset = dataset.map(rand_window_batch, num_parallel_calls=tf.data.AUTOTUNE)
-            dataset = dataset.shuffle(100)
+            dataset = dataset.shuffle(10)
             return dataset.prefetch(tf.data.AUTOTUNE)
 
         dataset = tf.data.Dataset.from_tensor_slices(move_files)
         dataset = dataset.interleave(
             parse_fn,
             cycle_length=tf.data.AUTOTUNE,
-            block_length=16,
+            block_length=1,
             num_parallel_calls=tf.data.AUTOTUNE,
             deterministic=True
         )
-
-        # Late Batching
-        # dataset = dataset.batch(config.batch_size)
+        dataset = dataset.shuffle(50)
         return dataset.prefetch(tf.data.AUTOTUNE)
 
 

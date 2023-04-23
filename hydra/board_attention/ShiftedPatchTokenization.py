@@ -2,36 +2,72 @@ from keras import layers
 import tensorflow as tf
 from hydra import config
 
-# AUGMENTATION
-IMAGE_SIZE = 8
-PATCH_SIZE = 2
-NUM_PATCHES = (IMAGE_SIZE // PATCH_SIZE) ** 2
-
-# ARCHITECTURE
-LAYER_NORM_EPS = 1e-6
-
 
 
 
 
 class ShiftedPatchTokenization(layers.Layer):
-    def __init__(
-        self,
-        image_size=IMAGE_SIZE,  # 8x8 board
-        patch_size=PATCH_SIZE,
-        num_patches=(IMAGE_SIZE // PATCH_SIZE) ** 2,
-        projection_dim=config.embed_dim,
-        vanilla=False,
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.vanilla = vanilla  # Flag to swtich to vanilla patch extractor
-        self.image_size = image_size
-        self.patch_size = patch_size
-        self.half_patch = patch_size // 2
-        self.flatten_patches = layers.Reshape((num_patches, -1))
-        self.projection = layers.Dense(units=projection_dim)
-        self.layer_norm = layers.LayerNormalization(epsilon=LAYER_NORM_EPS)
+        self.image_size = config.visual_transformer_img_size
+        self.patch_size = config.visual_transformer_patch_size
+        self.half_patch = self.patch_size // 2
+        self.flatten_patches = layers.Reshape((config.visual_transformer_num_patches, -1))
+        self.projection = layers.Dense(units=config.embed_dim)
+        self.layer_norm = layers.LayerNormalization(epsilon=config.visual_transformer_epsilon)
+
+
+    def __call__(self, images):
+
+
+
+        # 1. Shift original board position (8x8x12) in 4 diagonal directions
+        # - left-up, left-down, right-up, right-down
+        # - each shift produces a 8x8x12 board tensor
+        # - these tensors are concatenated to the original board tensor along the last dimension
+        # - input shape: (batch, 8, 8, 12)
+        # - output shape: (batch, 8, 8, 60)
+        images = tf.concat(
+            [
+                images,
+                self.crop_shift_pad(images, mode="left-up"),
+                self.crop_shift_pad(images, mode="left-down"),
+                self.crop_shift_pad(images, mode="right-up"),
+                self.crop_shift_pad(images, mode="right-down"),
+            ],
+            axis=-1,
+        )
+
+
+
+        # 2. Extract patches from the 8x8x60 tensor
+        # - input shape: (batch, 8, 8, 60)
+        # - output shape: (batch, 4, 4, 240)
+        patches = tf.image.extract_patches(
+            images=images,
+            sizes=[1, self.patch_size, self.patch_size, 1],    # (1, 2, 2, 1)
+            strides=[1, self.patch_size, self.patch_size, 1],  # (1, 2, 2, 1)
+            rates=[1, 1, 1, 1],
+            padding="VALID",
+            name="extract_patches",
+        )
+
+
+
+        # 3. Flatten patches
+        # - input shape: (batch, 4, 4, 240)
+        # - output shape: (batch, 16, 240)
+        flat_patches = self.flatten_patches(patches)
+
+
+
+        # 4. Normalize and project patches
+        # - input shape: (batch, 16, 240)
+        # - output shape: (batch, 16, embed_dim)
+        tokens = self.layer_norm(flat_patches)
+        tokens = self.projection(tokens)
+        return tokens
+
 
     def crop_shift_pad(self, images, mode):
         # Build the diagonally shifted images
@@ -73,34 +109,3 @@ class ShiftedPatchTokenization(layers.Layer):
         )
         return shift_pad
 
-    def __call__(self, images):
-        if not self.vanilla:
-            # Concat the shifted images with the original image
-            images = tf.concat(
-                [
-                    images,
-                    self.crop_shift_pad(images, mode="left-up"),
-                    self.crop_shift_pad(images, mode="left-down"),
-                    self.crop_shift_pad(images, mode="right-up"),
-                    self.crop_shift_pad(images, mode="right-down"),
-                ],
-                axis=-1,
-            )
-        # Patchify the images and flatten it
-        patches = tf.image.extract_patches(
-            images=images,
-            sizes=[1, self.patch_size, self.patch_size, 1],
-            strides=[1, self.patch_size, self.patch_size, 1],
-            rates=[1, 1, 1, 1],
-            padding="VALID",
-            name="extract_patches",
-        )
-        flat_patches = self.flatten_patches(patches)
-        if not self.vanilla:
-            # Layer normalize the flat patches and linearly project it
-            tokens = self.layer_norm(flat_patches)
-            tokens = self.projection(tokens)
-        else:
-            # Linearly project the flat patches
-            tokens = self.projection(flat_patches)
-        return (tokens, patches)

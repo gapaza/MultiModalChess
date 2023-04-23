@@ -18,7 +18,8 @@ class BoardEmbedding(layers.Layer):
         super(BoardEmbedding, self).__init__()
 
         self.board_embedding = keras.Sequential([
-
+            layers.Conv2D(64, kernel_size=(3, 3), padding='same', activation='relu'),
+            layers.Reshape((64, 64)),
         ])
 
 

@@ -1,5 +1,6 @@
 import os
 import pickle
+import tensorflow as tf
 
 
 #######################
@@ -34,10 +35,10 @@ games_file = os.path.join(root_dir, 'games', 'human-training-games.pgn')
 # games_file = os.path.join(root_dir, 'games', 'computer', 'ccrl-40-15-elo-3400.pgn')
 
 # --> Game Directory Input
-# games_file_dir = os.path.join(root_dir, 'games', 'chess-com-gm-games')
+games_file_dir = os.path.join(root_dir, 'games', 'chess-com-gm-games')
 # games_file_dir = os.path.join(root_dir, 'games', 'ccrl-40-15-elo-3400')
 games_file_dir = os.path.join(root_dir, 'games', 'human-training-games')
-games_file_dir = os.path.join(root_dir, 'games', 'human-training-games-san')
+# games_file_dir = os.path.join(root_dir, 'games', 'human-training-games-san')
 
 
 # --> Eval Directory
@@ -68,21 +69,26 @@ train_dataset = 'human-training-games-training-299k'
 val_dataset = 'human-training-games-validation-299k'
 model_name = 'hydrachess'
 epochs = 30
-batch_size = 32  # 32 64 128
+batch_size = 512  # 32 64 128 256 512 1024
 seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file
 embed_dim = 64  # 512 too much
 encoder_dense_dim = 2048  # 2048
 encoder_heads = 48
 num_sparse_board = 3
+
+
+visual_transformer_dense_dim = 2048
+visual_transformer_img_size = 8
+visual_transformer_patch_size = 2
+visual_transformer_num_patches = (visual_transformer_img_size // visual_transformer_patch_size) ** 2
+visual_transformer_epsilon = 1e-6
 visual_transformer_layers = 4
 visual_transformer_heads = 12
 visual_transformer_units = [
     embed_dim * 2,
     embed_dim,
 ]
-vanilla_viz_transformer = False
-
 
 
 
@@ -149,5 +155,6 @@ print('--> FINISHED: config.py')
 # Commands
 # scp -i ~/keys/gabe-master.pem ./human-training-games-299k.zip ubuntu@3.17.77.24:/home/ubuntu/MultiModalChess/datasets
 # scp -i ~/keys/gabe-master.pem ubuntu@18.221.115.53:/home/ubuntu/MultiModalChess/positions/human-training-games-141727.zip .
+# scp -i ~/keys/gabe-master.pem ./human-training-games-141727.zip ubuntu@18.221.115.53:/home/ubuntu/MultiModalChess/positions
 
 

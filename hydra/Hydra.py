@@ -41,6 +41,7 @@ class Hydra(layers.Layer):
 
         # --> Board Embedding
         board_embedding = self.board_attention(board_inputs)
+        # board_embedding = self.board_embedding(board_inputs)
 
         # --> Move Embedding
         move_embedding = self.move_embedding(move_inputs)
