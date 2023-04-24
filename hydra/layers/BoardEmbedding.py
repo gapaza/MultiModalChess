@@ -27,20 +27,22 @@ class BoardEmbedding(layers.Layer):
         # - input shape: (batch, 8, 8, 12)
         # - output shape: (batch, 8, 8, 60)
         # - output shape2: (batch, 8, 8, 108) ~ with 4 additional shifts
-        images = tf.concat(
-            [
-                images,
-                self.crop_shift_pad2(images, mode="up"),
-                self.crop_shift_pad2(images, mode="left"),
-                self.crop_shift_pad2(images, mode="right"),
-                self.crop_shift_pad2(images, mode="down"),
-                self.crop_shift_pad2(images, mode="left-up"),
-                self.crop_shift_pad2(images, mode="left-down"),
-                self.crop_shift_pad2(images, mode="right-up"),
-                self.crop_shift_pad2(images, mode="right-down"),
-            ],
-            axis=-1,
-        )
+        # images = tf.concat(
+        #     [
+        #         images,
+        #         self.crop_shift_pad2(images, mode="up"),
+        #         self.crop_shift_pad2(images, mode="left"),
+        #         self.crop_shift_pad2(images, mode="right"),
+        #         self.crop_shift_pad2(images, mode="down"),
+        #         self.crop_shift_pad2(images, mode="left-up"),
+        #         self.crop_shift_pad2(images, mode="left-down"),
+        #         self.crop_shift_pad2(images, mode="right-up"),
+        #         self.crop_shift_pad2(images, mode="right-down"),
+        #     ],
+        #     axis=-1,
+        # )
+        images = self.get_image_stack(images)
+
 
         # 2. Extract patches from the 8x8x60 tensor
         # - input shape: (batch, 8, 8, 60)
@@ -67,70 +69,60 @@ class BoardEmbedding(layers.Layer):
         return tokens
 
 
-    def crop_shift_pad2(self, images, mode):
-        if mode in {"left", "up", "right", "down", "left-up", "left-down", "right-up", "right-down"}:
-            crop_height, crop_width, shift_height, shift_width = self.small_box_shift_vars(mode)
-        elif mode in {"left-2", "up-2", "right-2", "down-2", "left-up-2", "left-down-2", "right-up-2", "right-down-2", "k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8"}:
-            mode = mode[:-2]  # Remove the "-2" from the mode string to match the keys in set_shift_vars
-            crop_height, crop_width, shift_height, shift_width = self.large_box_shift_vars(mode)
-        else:
-            raise ValueError(f"Invalid mode: {mode}")
+    def get_image_stack(self, images):
 
-        # Crop the shifted images and pad them
-        crop = tf.image.crop_to_bounding_box(
-            images,
-            offset_height=crop_height,
-            offset_width=crop_width,
-            target_height=self.image_size - self.half_patch,
-            target_width=self.image_size - self.half_patch,
+        def get_shift(images, vars):
+            crop_height, crop_width, shift_height, shift_width = vars
+            crop = tf.image.crop_to_bounding_box(
+                images,
+                offset_height=crop_height,
+                offset_width=crop_width,
+                target_height=self.image_size - self.half_patch,
+                target_width=self.image_size - self.half_patch,
+            )
+            shift_pad = tf.image.pad_to_bounding_box(
+                crop,
+                offset_height=shift_height,
+                offset_width=shift_width,
+                target_height=self.image_size,
+                target_width=self.image_size,
+            )
+            return shift_pad
+
+        stack = tf.concat(
+            [get_shift(images, shift) for shift in self.get_all_shifts()],
+            axis=-1
         )
-        shift_pad = tf.image.pad_to_bounding_box(
-            crop,
-            offset_height=shift_height,
-            offset_width=shift_width,
-            target_height=self.image_size,
-            target_width=self.image_size,
-        )
-        return shift_pad
+        return stack
 
 
-    def large_box_shift_vars(self, direction):
-        shift_map = {
-            "left": (0, 2, 0, 0),
-            "k1": (1, 2, 0, 0),
-            "left-up": (2, 2, 0, 0),
-            "k2": (2, 1, 0, 0),
-            "up": (2, 0, 0, 0),
-            "k3": (2, 0, 0, 1),
-            "right-up": (2, 0, 0, 2),
-            "k4": (1, 0, 0, 2),
-            "right": (0, 0, 0, 2),
-            "k5": (0, 0, 1, 2),
-            "right-down": (0, 0, 2, 2),
-            "k6": (0, 0, 2, 1),
-            "down": (0, 0, 2, 0),
-            "k7": (0, 1, 2, 0),
-            "left-down": (0, 2, 2, 0),
-            "k8": (0, 2, 1, 0),
-        }
-        return shift_map[direction]
-
-    def small_box_shift_vars(self, direction):
-        shift_map = {
-            "up": (1, 0, 0, 0),
-            "left": (0, 1, 0, 0),
-            "down": (0, 0, 1, 0),
-            "right": (0, 0, 0, 1),
-            "left-up": (1, 1, 0, 0),
-            "left-down": (0, 1, 1, 0),
-            "right-up": (1, 0, 0, 1),
-            "right-down": (0, 0, 1, 1),
-        }
-        return shift_map[direction]
-
-    def get_transformations(self):
+    def get_all_shifts(self):
         return [
-            
+            (1, 0, 0, 0),
+            (0, 1, 0, 0),
+            (0, 0, 1, 0),
+            (0, 0, 0, 1),
+            (1, 1, 0, 0),
+            (0, 1, 1, 0),
+            (1, 0, 0, 1),
+            (0, 0, 1, 1),
+
+            (0, 2, 0, 0),
+            (1, 2, 0, 0),
+            (2, 2, 0, 0),
+            (2, 1, 0, 0),
+            (2, 0, 0, 0),
+            (2, 0, 0, 1),
+            (2, 0, 0, 2),
+            (1, 0, 0, 2),
+            (0, 0, 0, 2),
+            (0, 0, 1, 2),
+            (0, 0, 2, 2),
+            (0, 0, 2, 1),
+            (0, 0, 2, 0),
+            (0, 1, 2, 0),
+            (0, 2, 2, 0),
+            (0, 2, 1, 0),
         ]
 
 
