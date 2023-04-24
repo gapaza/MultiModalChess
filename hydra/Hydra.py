@@ -45,8 +45,8 @@ class Hydra(layers.Layer):
         # self.visual_encoder_2 = VisualEncoder()
 
         # --> Decoders
-        self.decoder = TransformerDecoder()
-        self.decoder_dropout = layers.Dropout(0.5)
+        # self.decoder = TransformerDecoder(config.encoder_dense_dim, config.encoder_heads)
+        # self.decoder_dropout = layers.Dropout(0.5)
 
         # --> Output Heads
         self.autoregressive_head = layers.Dense(config.vocab_size, activation='softmax')
@@ -68,10 +68,22 @@ class Hydra(layers.Layer):
         combined_positional_embedding = self.positional_embedding(combined_embedding)
 
         # 5. Visual Encoder
+        # encoder_outputs = self.encoder(combined_positional_embedding)
         encoder_outputs = self.visual_encoder(combined_positional_embedding)
         # encoder_outputs = self.visual_encoder_2(encoder_outputs)
 
         # 6. Output Heads
+        output = self.split_output(encoder_outputs)
+        # output = self.all_output(encoder_outputs)
+
+        return output
+
+
+    def all_output(self, encoder_outputs):
+        return None
+
+
+    def split_output(self, encoder_outputs):
         split_idx = config.vt_num_patches
         encoder_board_output = encoder_outputs[:, :split_idx, :]
         encoder_move_output = encoder_outputs[:, split_idx:, :]
@@ -81,6 +93,12 @@ class Hydra(layers.Layer):
         elif self.mode == 'predict':
             output = self.move_prediction_head(encoder_outputs)
         return output
+
+
+
+
+
+
 
     def call_autoregressive(self, board_inputs, encoder_move_inputs, decoder_move_inputs, mask=None):
 
@@ -107,10 +125,6 @@ class Hydra(layers.Layer):
         # 7. Output Heads
         output = self.autoregressive_head(decoder_outputs)
         return output
-
-
-
-
 
     def call_old(self, board_inputs, move_inputs, mask=None):
 

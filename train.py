@@ -61,6 +61,8 @@ def train():
 
     # --> Load Datasets
     training_dataset, validation_dataset = dataset_generator.load_datasets()
+    # training_dataset = training_dataset.batch(128)
+    # validation_dataset = validation_dataset.batch(128)
 
     print('Finished loading datasets...')
 
@@ -129,8 +131,8 @@ def build_model():
     model = HydraMLM([board_inputs, move_inputs], output, name="hydra_mlm")
 
     # --> Compile Model
-    optimizer = keras.optimizers.Adam()
-    model.compile(optimizer=optimizer, jit_compile=False)
+    optimizer = tf.keras.optimizers.Adam()
+    model.compile(optimizer=optimizer, jit_compile=True)
 
     # --> Save Model Details
     model.summary(expand_nested=True)

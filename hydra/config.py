@@ -65,15 +65,15 @@ positions_load_dir = os.path.join(positions_dir, 'human-training-games-141727')
 ##### Training Settings #####
 #############################
 save_dataset = False
-train_dataset = 'human-training-games-141727-train-112857'
-val_dataset = 'human-training-games-141727-val-112857'
+train_dataset = 'human-training-games-141727-train-120410'
+val_dataset = 'human-training-games-141727-val-120410'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 32  # 32 64 128 256 512 1024
 seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file
 embed_dim = 256  # 512 too much
-encoder_dense_dim = 2048  # 2048
+encoder_dense_dim = 1024  # 2048
 encoder_heads = 48
 num_sparse_board = 3
 
@@ -83,7 +83,7 @@ vt_img_size = 8
 vt_patch_size = 1
 vt_num_patches = (vt_img_size // vt_patch_size) ** 2
 vt_epsilon = 1e-6
-vt_passes = 4
+vt_passes = 1
 vt_heads = 48
 
 
