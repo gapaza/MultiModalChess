@@ -27,6 +27,7 @@ class BoardEmbedding(layers.Layer):
         # - input shape: (batch, 8, 8, 12)
         # - output shape: (batch, 8, 8, 60)
         # - output shape2: (batch, 8, 8, 108) ~ with 4 additional shifts
+        # - output shape2: (batch, 8, 8, 300) ~ with 4 additional shifts
         # images = tf.concat(
         #     [
         #         images,
@@ -71,14 +72,14 @@ class BoardEmbedding(layers.Layer):
 
     def get_image_stack(self, images):
 
-        def get_shift(images, vars):
+        def get_shift(images, vars, psize):
             crop_height, crop_width, shift_height, shift_width = vars
             crop = tf.image.crop_to_bounding_box(
                 images,
                 offset_height=crop_height,
                 offset_width=crop_width,
-                target_height=self.image_size - self.half_patch,
-                target_width=self.image_size - self.half_patch,
+                target_height=self.image_size - psize,
+                target_width=self.image_size - psize,
             )
             shift_pad = tf.image.pad_to_bounding_box(
                 crop,
@@ -89,24 +90,29 @@ class BoardEmbedding(layers.Layer):
             )
             return shift_pad
 
-        stack = tf.concat(
-            [get_shift(images, shift) for shift in self.get_all_shifts()],
-            axis=-1
-        )
-        return stack
+
+        stack = []
+        for shift in self.get_box_shifts():
+            stack.append(get_shift(images, shift, 1))
+        for shift in self.get_outer_box_shifts():
+            stack.append(get_shift(images, shift, 2))
+        return tf.concat(stack, axis=-1)
 
 
-    def get_all_shifts(self):
+    def get_box_shifts(self):
         return [
-            (1, 0, 0, 0),
-            (0, 1, 0, 0),
-            (0, 0, 1, 0),
-            (0, 0, 0, 1),
-            (1, 1, 0, 0),
-            (0, 1, 1, 0),
-            (1, 0, 0, 1),
-            (0, 0, 1, 1),
+                (1, 0, 0, 0),
+                (0, 1, 0, 0),
+                (0, 0, 1, 0),
+                (0, 0, 0, 1),
+                (1, 1, 0, 0),
+                (0, 1, 1, 0),
+                (1, 0, 0, 1),
+                (0, 0, 1, 1)
+            ]
 
+    def get_outer_box_shifts(self):
+        return [
             (0, 2, 0, 0),
             (1, 2, 0, 0),
             (2, 2, 0, 0),
@@ -122,7 +128,7 @@ class BoardEmbedding(layers.Layer):
             (0, 0, 2, 0),
             (0, 1, 2, 0),
             (0, 2, 2, 0),
-            (0, 2, 1, 0),
+            (0, 2, 1, 0)
         ]
 
 

@@ -31,6 +31,7 @@ class VisualEncoder(layers.Layer):
 
     def __call__(self, inputs):
         encoded_patches = inputs
+
         for _ in range(config.vt_passes):
             x1 = self.norm_1(encoded_patches)
 
@@ -47,8 +48,6 @@ class VisualEncoder(layers.Layer):
             encoded_patches = self.add_2([x3, x2])
 
         return encoded_patches
-
-
 
 
 
