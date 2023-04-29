@@ -114,27 +114,14 @@ class DatasetGenerator:
 
 if __name__ == '__main__':
     dg = DatasetGenerator()
-    dg.save_datasets()
-    # train_dataset, val_dataset = dg.get_datasets()
+    # dg.save_datasets()
 
 
-
-
-    #
-    # count = 0
-    # print('\n\n -- TESTING -- \n\n')
-    # print('train_dataset:', train_dataset)
-    # print('train_dataset elements:', train_dataset.element_spec)
-    #
-    #
-    #
-    #
-    # # _ParallelInterleaveDataset
-    # # _PrefetchDataset
-    # for out1 in train_dataset.take(1):
-    #     print('count:', count)
-    #     count += 1
-    #     print('out1:', out1)
+    print('\n\n -- TESTING -- \n\n')
+    train_dataset, val_dataset = dg.get_datasets()
+    count = 0
+    for out1, out2, out3 in train_dataset.take(1):
+        print('out1:', out1)
 
 
 
