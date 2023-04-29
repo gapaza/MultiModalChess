@@ -23,22 +23,22 @@ class DatasetGenerator:
 
         # 3. Split files with 90% train and 10% validation
         split_idx = int(len(move_files) * 0.9)
-        train_move_files, val_move_files = move_files[:split_idx], move_files[split_idx:]
-        print('Train Move Files:', train_move_files)
-        print('Val Move Files:', val_move_files)
-
-        # 3. Parse move files
-        self.train_dataset = self.parse_dataset(train_move_files)
-        self.val_dataset = self.parse_dataset(val_move_files)
-        # self.train_dataset = self.parse_dataset_memory(train_move_files)
-        # self.val_dataset = self.parse_dataset_memory(val_move_files)
-
-        # 4. Save dataset
-        if config.save_dataset:
-            self.save_datasets()
+        self.train_move_files, self.val_move_files = move_files[:split_idx], move_files[split_idx:]
+        print('Train Move Files:', self.train_move_files)
+        print('Val Move Files:', self.val_move_files)
 
 
-    def parse_dataset(self, move_files):
+
+
+    def get_interleave_dataset(self, save=False):
+        train_dataset = self.parse_interleave_dataset(self.train_move_files)
+        val_dataset = self.parse_interleave_dataset(self.val_move_files)
+        if save:
+            self.save_dataset(train_dataset, label='train-interleave')
+            self.save_dataset(val_dataset, label='val-interleave')
+        return train_dataset, val_dataset
+
+    def parse_interleave_dataset(self, move_files):
         def parse_fn(file_path):
             dataset = tf.data.TextLineDataset(file_path)
 
@@ -50,7 +50,7 @@ class DatasetGenerator:
             dataset = dataset.batch(config.batch_size)
             dataset = dataset.map(config.encode_tf_batch, num_parallel_calls=tf.data.AUTOTUNE)
             dataset = dataset.map(rand_window_batch, num_parallel_calls=tf.data.AUTOTUNE)
-            dataset = dataset.shuffle(3125)
+            # dataset = dataset.shuffle(3125)
             return dataset.prefetch(tf.data.AUTOTUNE)
 
         dataset = tf.data.Dataset.from_tensor_slices(move_files)
@@ -64,7 +64,17 @@ class DatasetGenerator:
         dataset = dataset.shuffle(50)
         return dataset.prefetch(tf.data.AUTOTUNE)
 
-    def parse_dataset_memory(self, move_files):
+
+
+    def get_memory_dataset(self, save=False):
+        train_dataset = self.parse_memory_dataset(self.train_move_files)
+        val_dataset = self.parse_memory_dataset(self.val_move_files)
+        if save:
+            self.save_dataset(train_dataset, label='train-memory')
+            self.save_dataset(val_dataset, label='val-memory')
+        return train_dataset, val_dataset
+
+    def parse_memory_dataset(self, move_files):
         print(move_files)
 
         full_dataset = tf.data.TextLineDataset(move_files)
@@ -76,12 +86,7 @@ class DatasetGenerator:
 
 
 
-    def get_datasets(self):
-        return self.train_dataset, self.val_dataset
 
-    def save_datasets(self):
-        self.save_dataset(self.train_dataset, label='train')
-        self.save_dataset(self.val_dataset, label='val')
 
     def save_dataset(self, dataset, label='train'):
         positions_load_dir_name = os.path.basename(config.positions_load_dir)
@@ -98,7 +103,6 @@ class DatasetGenerator:
                 move_files.append(full_path)
 
         return move_files
-
 
     @staticmethod
     def load_datasets():
@@ -118,10 +122,13 @@ if __name__ == '__main__':
 
 
     print('\n\n -- TESTING -- \n\n')
-    train_dataset, val_dataset = dg.get_datasets()
+    train_dataset, val_dataset = dg.get_memory_dataset()
     count = 0
-    for out1, out2, out3 in train_dataset.take(1):
+    for out1, out2, out3, out4 in train_dataset.take(1):
         print('out1:', out1)
+        print('out2:', out2)
+        print('out3:', out3)
+        print('out4:', out4)
 
 
 

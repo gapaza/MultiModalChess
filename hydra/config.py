@@ -65,13 +65,12 @@ positions_load_dir = os.path.join(positions_dir, 'human-training-games-141727')
 ##### Training Settings #####
 #############################
 save_dataset = False
-train_dataset = 'human-training-games-141727-train-120410'
+train_dataset = 'human-training-games-141727-train-120410' # best: human-training-games-141727-train-120410
 val_dataset = 'human-training-games-141727-val-120410'
 model_name = 'hydrachess'
 epochs = 30
 batch_size = 32  # 32 64 128 256 512 1024
 seq_length = 128  # 256 max
-# find vocab size by len of list in tokens file
 embed_dim = 256  # 512 too much
 encoder_dense_dim = 1024  # 2048
 encoder_heads = 48
@@ -129,6 +128,7 @@ vocab_size = len(vocab)
 mask_token_id = tokenizer(["[mask]"]).numpy()[0][0]
 padding_token_id = tokenizer(['']).numpy()[0][0]
 pos_token_id = tokenizer(["[pos]"]).numpy()[0][0]
+
 id2token = dict(enumerate(tokenizer.get_vocabulary()))
 token2id = {y: x for x, y in id2token.items()}
 
