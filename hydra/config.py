@@ -23,6 +23,7 @@ board_attention_dir = os.path.join(root_dir, 'hydra', 'board_attention')
 ################################
 
 stockfish_data_dir = os.path.join(root_dir, 'evaluations')
+stockfish_data_file = os.path.join(stockfish_data_dir, 'stockfish_data_32.pkl')
 
 
 ########################################

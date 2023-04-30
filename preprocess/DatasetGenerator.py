@@ -12,12 +12,18 @@ class DatasetGenerator:
 
     def __init__(self):
 
-        # 1. Get positions directory
-        print('Parsing:', config.positions_load_dir)
-        self.parse_dir = config.positions_load_dir
+        # 1. Get evaluations directory
+        print('Parsing:', config.stockfish_data_file)
+        self.parse_dir = config.stockfish_data_dir
         self.time_stamp = time.strftime("%H%M%S")
 
-        # 2. Get move files
+        # 2. Load Moves
+        # load pickle file
+        self.stockfish_data = pickle.load(open(config.stockfish_data_file, 'rb'))
+
+
+
+
         move_files = self.load_move_files()
         print('Move Files:', move_files)
 
@@ -95,14 +101,7 @@ class DatasetGenerator:
         dataset.save(file_path)
         print('Dataset: ', label, file_path)
 
-    def load_move_files(self):
-        move_files = []
-        for file in os.listdir(self.parse_dir):
-            if file.endswith('.txt'):
-                full_path = os.path.join(self.parse_dir, file)
-                move_files.append(full_path)
 
-        return move_files
 
     @staticmethod
     def load_datasets():
