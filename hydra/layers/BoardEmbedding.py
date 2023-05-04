@@ -7,8 +7,8 @@ import tensorflow as tf
 
 class BoardEmbedding(layers.Layer):
 
-    def __init__(self):
-        super(BoardEmbedding, self).__init__()
+    def __init__(self, name):
+        super(BoardEmbedding, self).__init__(name=name)
 
         self.image_size = config.vt_img_size
         self.patch_size = config.vt_patch_size
@@ -94,8 +94,8 @@ class BoardEmbedding(layers.Layer):
         stack = []
         for shift in self.get_box_shifts():
             stack.append(get_shift(images, shift, 1))
-        for shift in self.get_outer_box_shifts():
-            stack.append(get_shift(images, shift, 2))
+        # for shift in self.get_outer_box_shifts():
+        #     stack.append(get_shift(images, shift, 2))
         return tf.concat(stack, axis=-1)
 
 

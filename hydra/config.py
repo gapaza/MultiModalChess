@@ -68,7 +68,7 @@ save_dataset = False
 train_dataset = 'human-training-games-141727-train-120410'
 val_dataset = 'human-training-games-141727-val-120410'
 model_name = 'hydrachess'
-epochs = 30
+epochs = 3
 batch_size = 32  # 32 64 128 256 512 1024
 seq_length = 128  # 256 max
 # find vocab size by len of list in tokens file

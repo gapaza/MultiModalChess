@@ -30,7 +30,7 @@ class Hydra(layers.Layer):
         self.decoder_move_embedding = MoveEmbedding(positional=True)
 
         # --> Board Embedding
-        self.board_embedding = BoardEmbedding()
+        self.board_embedding = BoardEmbedding('board_embedding')
         self.board_attention = BoardAttention()
 
         # --> Modality Fusion
@@ -40,7 +40,7 @@ class Hydra(layers.Layer):
         self.positional_embedding = PositionalEmbedding()
 
         # --> Encoders
-        self.encoder = Encoder()
+        # self.encoder = Encoder()
         self.visual_encoder = VisualEncoder()
         # self.visual_encoder_2 = VisualEncoder()
 

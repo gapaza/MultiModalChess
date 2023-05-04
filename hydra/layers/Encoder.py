@@ -24,7 +24,7 @@ class Encoder(layers.Layer):
             # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
             # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
             # TransformerEncoder(config.encoder_dense_dim, config.encoder_heads),
-        ])
+        ], name='encoder_stack')
 
 
 

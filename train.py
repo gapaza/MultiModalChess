@@ -137,7 +137,7 @@ def build_model():
     # --> Save Model Details
     model.summary(expand_nested=True)
     model_img_file = os.path.join(config.models_dir, config.model_name + '.png')
-    plot_model(model, to_file=model_img_file, show_shapes=True, show_layer_names=True, expand_nested=True)
+    plot_model(model, to_file=model_img_file, show_shapes=True, show_layer_names=True, expand_nested=False, layer_range=['tf.image.extract_patches', 'move_prediction_head'])
     return model
 
 
