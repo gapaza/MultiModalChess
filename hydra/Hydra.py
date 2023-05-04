@@ -53,6 +53,10 @@ class Hydra(layers.Layer):
         self.move_prediction_head = MovePrediction()
         self.move_mask_prediction_head = MoveMaskPrediction()
 
+        # --> Classification Head
+        self.global_pooling = layers.GlobalAveragePooling1D()
+        self.classification_head = layers.Dense(config.vocab_size, activation='sigmoid')
+
     def __call__(self, board_inputs, move_inputs, mask=None):
 
         # 1. Move Embedding
