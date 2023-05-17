@@ -59,6 +59,13 @@ positions_load_dir = os.path.join(positions_dir, 'human-training-games-141727')
 
 
 
+#######################
+##### Fine-Tuning #####
+#######################
+
+fine_tuning_evaluations_dir = os.path.join(root_dir, 'games', 'fine-tuning')
+
+
 
 
 #############################

@@ -61,7 +61,6 @@ def train():
 
     # --> Load Datasets
     training_dataset, validation_dataset = DatasetGenerator.load_datasets()
-
     print('Finished loading datasets...')
 
     # --> Create Model
