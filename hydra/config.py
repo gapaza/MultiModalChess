@@ -65,8 +65,10 @@ positions_load_dir = os.path.join(positions_dir, 'human-training-games-141727')
 ##### Training Settings #####
 #############################
 save_dataset = False
-train_dataset = 'human-training-games-141727-train-120410'
-val_dataset = 'human-training-games-141727-val-120410'
+# train_dataset = 'human-training-games-141727-train-120410'
+# val_dataset = 'human-training-games-141727-val-120410'
+train_dataset = 'human-training-games-141727-train-combined-64b-175839'
+val_dataset = 'human-training-games-141727-val-combined-64b-175839'
 model_name = 'hydrachess'
 epochs = 3
 batch_size = 32  # 32 64 128 256 512 1024
@@ -83,7 +85,6 @@ vt_img_size = 8
 vt_patch_size = 1
 vt_num_patches = (vt_img_size // vt_patch_size) ** 2
 vt_epsilon = 1e-6
-vt_passes = 1
 vt_heads = 48
 
 
@@ -107,7 +108,7 @@ def custom_standardization(input_data):
 
 special_tokens = ["[pos]", "[mask]"]
 num_special_tokens = len(special_tokens) + 2
-vocab_file = os.path.join(root_dir, 'tokens', 'tokens_1966.pkl')  # tokens_1966.pkl, tokens_1968_chesscom
+vocab_file = os.path.join(root_dir, 'tokens', 'tokens_1969_merged.pkl')  # tokens_1966.pkl, tokens_1968_chesscom
 vocab = []
 with open(vocab_file, 'rb') as f:
     vocab = list(pickle.load(f))

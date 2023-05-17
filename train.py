@@ -57,12 +57,10 @@ def train():
     dataset_generator = DatasetGenerator()
 
     # --> Interleave Datasets
-    # training_dataset, validation_dataset = dataset_generator.get_datasets()
+    # training_dataset, validation_dataset = dataset_generator.get_interleave_dataset()
 
     # --> Load Datasets
-    training_dataset, validation_dataset = dataset_generator.load_datasets()
-    # training_dataset = training_dataset.batch(128)
-    # validation_dataset = validation_dataset.batch(128)
+    training_dataset, validation_dataset = DatasetGenerator.load_datasets()
 
     print('Finished loading datasets...')
 
@@ -86,36 +84,6 @@ def train():
 
 
 
-def build_autoregressive_model():
-
-    # --> Inputs
-    board_input = layers.Input(shape=(8, 8, 12,), name="board")
-    move_encoder_input = layers.Input(shape=(None,), name="move_encoder")
-    move_decoder_input = layers.Input(shape=(None,), name="move_decoder")
-
-    # --> Hydra Encoder
-    hydra = Hydra()
-    output = hydra.call_autoregressive(board_input, move_encoder_input, move_decoder_input)
-
-    # --> Hydra Model
-    model = keras.Model([board_input, move_encoder_input, move_decoder_input], output, name="hydra_mlm")
-
-    # --> Compile Model
-    optimizer = keras.optimizers.Adam()
-    model.compile(
-        optimizer=optimizer,
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy'],
-        jit_compile=False
-    )
-
-    # --> Save Model Details
-    model.summary(expand_nested=True)
-    model_img_file = os.path.join(config.models_dir, config.model_name + '.png')
-    plot_model(model, to_file=model_img_file, show_shapes=True, show_layer_names=True, expand_nested=True)
-    return model
-
-
 def build_model():
 
     # --> Inputs
@@ -137,7 +105,7 @@ def build_model():
     # --> Save Model Details
     model.summary(expand_nested=True)
     model_img_file = os.path.join(config.models_dir, config.model_name + '.png')
-    plot_model(model, to_file=model_img_file, show_shapes=True, show_layer_names=True, expand_nested=False, layer_range=['tf.image.extract_patches', 'move_prediction_head'])
+    plot_model(model, to_file=model_img_file, show_shapes=True, show_layer_names=True, expand_nested=False)
     return model
 
 

@@ -32,20 +32,19 @@ class VisualEncoder(layers.Layer):
     def __call__(self, inputs):
         encoded_patches = inputs
 
-        for _ in range(config.vt_passes):
-            x1 = self.norm_1(encoded_patches)
+        x1 = self.norm_1(encoded_patches)
 
-            attention_output = self.attn_lsa(x1, x1)
-            x2 = self.add_1([attention_output, encoded_patches])
-            x3 = self.norm_2(x2)
+        attention_output = self.attn_lsa(x1, x1)
+        x2 = self.add_1([attention_output, encoded_patches])
+        x3 = self.norm_2(x2)
 
-            x3 = self.dense_1(x3)
-            x3 = self.dropout_1(x3)
+        x3 = self.dense_1(x3)
+        x3 = self.dropout_1(x3)
 
-            x3 = self.dense_2(x3)
-            x3 = self.dropout_2(x3)
+        x3 = self.dense_2(x3)
+        x3 = self.dropout_2(x3)
 
-            encoded_patches = self.add_2([x3, x2])
+        encoded_patches = self.add_2([x3, x2])
 
         return encoded_patches
 

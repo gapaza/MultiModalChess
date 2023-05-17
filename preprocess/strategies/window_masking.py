@@ -14,9 +14,9 @@ def rand_window_batch(encoded_texts):
                 rand_window,  # The function to apply to each element in the batch
                 encoded_texts,  # The input tensor with shape (None, 128)
                 fn_output_signature = (
-                    tf.TensorSpec(shape=(128,), dtype=tf.int64),  # encoded_texts_masked
-                    tf.TensorSpec(shape=(128,), dtype=tf.int64),  # y_labels
-                    tf.TensorSpec(shape=(128,), dtype=tf.int64),  # sample_weights
+                    tf.TensorSpec(shape=(128,), dtype=tf.int64),      # encoded_texts_masked
+                    tf.TensorSpec(shape=(128,), dtype=tf.int64),      # y_labels
+                    tf.TensorSpec(shape=(128,), dtype=tf.int64),      # sample_weights
                     tf.TensorSpec(shape=(8, 8, 12), dtype=tf.int64),  # board_tensor
                 )
                 # The expected output shape and data type
