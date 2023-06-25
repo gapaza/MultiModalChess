@@ -9,7 +9,7 @@ class MovePrediction(layers.Layer):
 
         self.next_move_avg = layers.GlobalAveragePooling1D()
         self.next_move_dropout = layers.Dropout(0.5)
-        self.next_move_prediction = layers.Dense(config.vocab_size, activation="softmax", name='next_move_prediction')
+        self.next_move_prediction = layers.Dense(config.vocab_size, activation="sigmoid", name='next_move_prediction')
 
 
 

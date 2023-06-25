@@ -75,8 +75,8 @@ class PositionParser:
                     game = chess.pgn.read_game(pgn_file)
                     if game is None:  # End of file
                         break
-                    # parsed_moves = self.parse_game_moves_uci(game)
-                    parsed_moves = self.parse_game_moves_san(game)
+                    parsed_moves = self.parse_game_moves_uci(game)
+                    # parsed_moves = self.parse_game_moves_san(game)
                     if parsed_moves:
                         games.append(parsed_moves)
                         cnt += 1

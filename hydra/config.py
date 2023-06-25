@@ -131,7 +131,14 @@ tokenizer = TextVectorization(
     standardize=custom_standardization,
     output_sequence_length=seq_length,
 )
+tokenizer_long = TextVectorization(
+    max_tokens=vocab_size + 2,
+    output_mode="int",
+    standardize=custom_standardization,
+    output_sequence_length=vocab_size + 2,
+)
 tokenizer.set_vocabulary(vocab)
+tokenizer_long.set_vocabulary(vocab)
 vocab = tokenizer.get_vocabulary()
 vocab_size = len(vocab)
 mask_token_id = tokenizer(["[mask]"]).numpy()[0][0]
@@ -144,15 +151,31 @@ def encode(input):
     encoded_input = tokenizer(input)
     return encoded_input.numpy()
 
+@tf.function
 def encode_tf(input):
-    encoded_input = tokenizer(tf.expand_dims(input, axis=0))
-    encoded_input = tf.squeeze(encoded_input, axis=0)
+    encoded_input = tokenizer(input)
+    if tf.rank(encoded_input) > 1:
+        encoded_input = tf.squeeze(encoded_input, axis=0)
     return encoded_input
 
+@tf.function
+def encode_tf_long(input):
+    encoded_input = tokenizer_long(input)
+    if tf.rank(encoded_input) > 1:
+        encoded_input = tf.squeeze(encoded_input, axis=0)
+    return encoded_input
+
+@tf.function
 def encode_tf_batch(input):
     encoded_input = tokenizer(input)
     return encoded_input
 
+
+
+def encode_tf_old(input):
+    encoded_input = tokenizer(tf.expand_dims(input, axis=0))
+    encoded_input = tf.squeeze(encoded_input, axis=0)
+    return encoded_input
 
 print('--> FINISHED: config.py')
 
