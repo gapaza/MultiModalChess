@@ -154,8 +154,9 @@ def encode(input):
 @tf.function
 def encode_tf(input):
     encoded_input = tokenizer(input)
-    if tf.rank(encoded_input) > 1:
-        encoded_input = tf.squeeze(encoded_input, axis=0)
+    # encoded_input = tf.reshape(encoded_input, (-1,))
+    # if tf.rank(encoded_input) > 1:
+    #     encoded_input = tf.squeeze(encoded_input, axis=0)
     return encoded_input
 
 @tf.function

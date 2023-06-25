@@ -76,8 +76,8 @@ class Hydra(layers.Layer):
         encoder_move_output = encoder_outputs[:, split_idx:, :]
 
         # 7. Output Head
-        output = self.mask_span_prediction_head(encoder_move_output)
-        # output = self.next_move_prediction_head(encoder_move_output)
+        # output = self.mask_span_prediction_head(encoder_move_output)
+        output = self.next_move_prediction_head(encoder_move_output)
 
         return output
 

@@ -1,4 +1,5 @@
 from hydra.HydraMLM import HydraMLM
+from hydra.HydraPredict import HydraPredict
 from hydra.Hydra import Hydra
 from keras import layers
 import keras
@@ -48,6 +49,7 @@ class PlotCallback(tf.keras.callbacks.Callback):
 
 
 from preprocess.DatasetGenerator import DatasetGenerator
+from preprocess.FineTuningDatasetGenerator import FineTuningDatasetGenerator
 
 def train():
 
@@ -83,6 +85,9 @@ def train():
 
 
 
+
+
+
 def build_model():
 
     # --> Inputs
@@ -112,18 +117,67 @@ def build_model():
 
 
 
+def fine_tune():
+    #####################
+    ### Load Datasets ###
+    #####################
+    # dataset_generator = FineTuningDatasetGenerator()
+    # training_dataset, validation_dataset = dataset_generator.get_datasets()
+
+    training_dataset, validation_dataset = FineTuningDatasetGenerator.load_datasets()
+    print('Finished loading datasets...')
+
+    model = build_fine_tuning()
+    print('Finished building model...')
+
+    # --> Train Model
+    model_file = os.path.join(config.datasets_dir, config.model_name)
+    checkpoint = ModelCheckpoint(model_file, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+    plot_checkpoint = PlotCallback("hydra-ft")
+    history = model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset,
+                        callbacks=[checkpoint, plot_checkpoint])
+
+    # --> Plot Training History
+    plt.figure(figsize=(10, 6))
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
 
 
 
 
+def build_fine_tuning():
 
+    # --> Inputs
+    board_inputs = layers.Input(shape=(8, 8, 12,), name="board")
+    move_inputs = layers.Input(shape=(config.seq_length,), name="moves")
 
+    # --> Hydra Encoder
+    hydra = Hydra()
+    # output = hydra.call_old(board_inputs, move_inputs)
+    output = hydra(board_inputs, move_inputs)
 
+    # --> Hydra Model
+    model = HydraPredict([board_inputs, move_inputs], output, name="hydra_predict")
+
+    # --> Compile Model
+    optimizer = tf.keras.optimizers.Adam()
+    model.compile(optimizer=optimizer, jit_compile=False)
+
+    # --> Save Model Details
+    model.summary(expand_nested=True)
+    model_img_file = os.path.join(config.models_dir, config.model_name + '-ft.png')
+    plot_model(model, to_file=model_img_file, show_shapes=True, show_layer_names=True, expand_nested=False)
+    return model
 
 
 
 if __name__ == '__main__':
-    train()
+    # train()
+    fine_tune()
 
 
 
