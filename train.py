@@ -103,8 +103,9 @@ def build_model():
     model = HydraMLM([board_inputs, move_inputs], output, name="hydra_mlm")
 
     # --> Compile Model
-    optimizer = tf.keras.optimizers.Adam()
-    model.compile(optimizer=optimizer, jit_compile=True)
+    # optimizer = tf.keras.optimizers.Adam()
+    optimizer = tf.keras.optimizers.legacy.Adam()
+    model.compile(optimizer=optimizer, jit_compile=False)
 
     # --> Save Model Details
     model.summary(expand_nested=True)

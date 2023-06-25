@@ -157,21 +157,21 @@ class FineTuningDatasetGenerator:
         positions_load_dir_name = os.path.basename(config.positions_load_dir)
 
         label = 'move_ranking_training'
-        file_path = os.path.join(config.datasets_dir, label)
+        file_path = os.path.join(config.ft_datasets_dir, label)
         self.train_dataset.save(file_path)
 
         label = 'move_ranking_validation'
-        file_path = os.path.join(config.datasets_dir, label)
+        file_path = os.path.join(config.ft_datasets_dir, label)
         self.val_dataset.save(file_path)
 
     @staticmethod
     def load_datasets():
         label = 'move_ranking_training'
-        train_file_path = os.path.join(config.datasets_dir, label)
+        train_file_path = os.path.join(config.ft_datasets_dir, label)
         train_dataset = tf.data.Dataset.load(train_file_path)
 
         label = 'move_ranking_validation'
-        val_file_path = os.path.join(config.datasets_dir, label)
+        val_file_path = os.path.join(config.ft_datasets_dir, label)
         val_dataset = tf.data.Dataset.load(val_file_path)
 
         return train_dataset, val_dataset

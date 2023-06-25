@@ -9,6 +9,7 @@ import tensorflow as tf
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 datasets_dir = os.path.join(root_dir, 'datasets')
+ft_datasets_dir = os.path.join(root_dir, 'ft-datasets')
 models_dir = os.path.join(root_dir, 'models')
 positions_dir = os.path.join(root_dir, 'positions')
 games_dir = os.path.join(root_dir, 'games')

@@ -5,8 +5,13 @@ import tensorflow_ranking as tfr
 class HydraPredict(tf.keras.Model):
 
     loss_fn = tfr.keras.losses.ApproxNDCGLoss(name='loss')
-    loss_tracker = tf.keras.metrics.Mean(name="loss")
+    # loss_fn = tfr.losses.make_loss_fn(tfr.losses.RankingLossKey.APPROX_NDCG_LOSS, name='loss')
+
     precision_tracker = tfr.keras.metrics.PrecisionMetric(name="accuracy", topn=3)
+    # precision_tracker = tfr.metrics.make_ranking_metric_fn(tfr.metrics.RankingMetricKey.PRECISION, name="accuracy")
+
+    loss_tracker = tf.keras.metrics.Mean(name="loss")
+
 
     def train_step(self, inputs):
         previous_moves, relevancy_scores, board_tensor = inputs
