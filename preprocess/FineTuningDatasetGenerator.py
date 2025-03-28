@@ -42,7 +42,7 @@ class FineTuningDatasetGenerator:
         return self.train_dataset, self.val_dataset
 
 
-    def parse_evaluation_file(self):
+    def parse_evaluation_file(self, max_positions=1000000):
         if os.path.exists(self.intermediate_file):
             print('Loading:', self.intermediate_file)
             with open(self.intermediate_file, 'rb') as f:
@@ -57,7 +57,7 @@ class FineTuningDatasetGenerator:
             file_lines = f.readlines()
             # Iterate over entries 1 through the end
 
-            for idx, line in enumerate(file_lines[1:1000]):
+            for idx, line in enumerate(file_lines[1:max_positions]):
                 matches = re.findall(r'\[.*?\]', line)
                 if len(matches) != 2:
                     print('Error parsing line:', line)

@@ -132,7 +132,7 @@ def fine_tune():
     print('Finished building model...')
 
     # --> Train Model
-    model_file = os.path.join(config.datasets_dir, config.model_name)
+    model_file = os.path.join(config.datasets_dir, 'hydra-ft')
     checkpoint = ModelCheckpoint(model_file, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
     plot_checkpoint = PlotCallback("hydra-ft")
     history = model.fit(training_dataset, epochs=config.epochs, validation_data=validation_dataset,
@@ -166,7 +166,7 @@ def build_fine_tuning():
 
     # --> Compile Model
     optimizer = tf.keras.optimizers.Adam()
-    model.compile(optimizer=optimizer, jit_compile=False)
+    model.compile(optimizer=optimizer, jit_compile=True)
 
     # --> Save Model Details
     model.summary(expand_nested=True)
